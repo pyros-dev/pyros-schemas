@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>pyros_schemas</name>
+  <version>0.0.1</version>
+  <description>
+    Pyros messages and services definition
+  </description>
+
+  <author>AlexV</author>
+  <maintainer email="alexandre.vincent@yujinrobot.com">AlexV</maintainer>
+  <license>BSD</license>
+
+  <url type="website">http://www.ros.org/wiki/rocon_tools</url>
+  <url type="repository">https://bitbucket.org/yujinrobot/gopher_common</url>
+  <url type="bugtracker">https://bitbucket.org/yujinrobot/gopher_common/issues</url>
+
+  <buildtool_depend version_gte="0.6.18">catkin</buildtool_depend>
+
+  <depend version_gte="1.11.19">rospy</depend>
+  <depend version_gte="0.5.9">std_msgs</depend>
+  <depend version_gte="2.9.1">marshmallow</depend>
+
+  <build_depend version_gte="0.10.0">roslint</build_depend>
+  <build_depend version_gte="0.2.10">message_generation</build_depend>
+
+  <exec_depend version_gte="0.4.12">message_runtime</exec_depend>
+
+  <!-- documentation dependencies -->
+  <doc_depend version_gte="0.2.10">python-catkin-pkg</doc_depend>
+
+  <export>
+    <rosdoc config="rosdoc.yaml"/>
+  </export>
+
+</package>
