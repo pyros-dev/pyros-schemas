@@ -50,6 +50,10 @@ def test_schema_std_Header_doctest():
         yield t
 
 
+def test_schema_http_statuscode_doctest():
+    for t in doctest.DocTestSuite("pyros_schemas.http_statuscode"):
+        yield t
+
 # Just in case we run this directly
 if __name__ == '__main__':
     nose.runmodule(__name__)
