@@ -29,6 +29,7 @@ from .std_Header import RosMsgHeader
 from .opt_Empty import PyrosMsgOptEmpty
 from .opt_Bool import PyrosMsgOptBool
 
+from .http_statuscode import RosMsgHttpStatusCode
 __all__ = [
     'with_explicitly_matched_type',
     'with_explicitly_matched_optional_type',
@@ -44,4 +45,6 @@ __all__ = [
 
     'PyrosMsgOptEmpty',
     'PyrosMsgOptBool',
+
+    'RosMsgHttpStatusCode',
 ]

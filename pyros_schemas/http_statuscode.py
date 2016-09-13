@@ -28,14 +28,14 @@ from .decorators import with_explicitly_matched_type
 
 
 @with_explicitly_matched_type(pyros_msgs.HttpStatusCode)
-class RosMsgBool(marshmallow.Schema):
+class RosMsgHttpStatusCode(marshmallow.Schema):
     """
     RosMsgBool Schema handles serialization from std_msgs.msgs.Bool to python dict
     and deserialization from python dict to std_msgs.msgs.Bool
 
-    >>> schema = RosMsgBool()
+    >>> schema = RosMsgHttpStatusCode()
 
-    >>> rosmsgTrue = std_msgs.Bool(data=True)
+    >>> rosmsgTrue = pyros_msgs.HttpStatusCode(data=pyros_msgs.HttpStatusCode)
     >>> marshalledTrue, errors = schema.dump(rosmsgTrue)
     >>> marshmallow.pprint(marshalledTrue) if not errors else print("ERRORS {0}".format(errors))
     {u'data': True}
