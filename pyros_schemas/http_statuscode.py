@@ -5,9 +5,9 @@ from __future__ import print_function
 Defining Schema for http request/response types
 
 These Fields and Schema are meant to be used together with ROS message type serialization :
-ROSTCP --deserialize in rospy--> std_msgs.msg.* --serialize (dump) in pyros_msgs--> dict
+ROSTCP --deserialize in rospy--> std_msgs.msg.* --serialize (dump) in pyros_schemas--> dict
 And reversely :
-dict --deserialize (load) in pyros_msgs--> std_msgs.msg.* --serialize in rospy--> ROSTCP
+dict --deserialize (load) in pyros_schemas--> std_msgs.msg.* --serialize in rospy--> ROSTCP
 
 This helps pyros deal with data only as dicts without worrying about the underlying ROS implementation.
 """
@@ -25,6 +25,7 @@ except ImportError:
 
 # To be able to run doctest directly we avoid relative import
 from .decorators import with_explicitly_matched_type
+from .std_Int import RosFieldUInt16
 
 
 @with_explicitly_matched_type(pyros_msgs.HttpStatusCode)
@@ -61,6 +62,6 @@ class RosMsgHttpStatusCode(marshmallow.Schema):
     >>> schema.load(schema.dump(randomRosBool).data).data == randomRosBool
     True
     """
-    status_code = pyros_msgs.RosFieldUInt16()
+    status_code = RosFieldUInt16()
 
 

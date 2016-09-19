@@ -38,9 +38,9 @@ rospy treats uint8[] data as a bytes, which is the Python representation for byt
 Detailed Ref : http://wiki.ros.org/std_msgs
 
 These Fields and Schema are meant to be used together with ROS message type serialization :
-ROSTCP --deserialize in rospy--> std_msgs.msg.[U]Int[8/16/32/64] --serialize (dump) in pyros_msgs--> dict
+ROSTCP --deserialize in rospy--> std_msgs.msg.[U]Int[8/16/32/64] --serialize (dump) in pyros_schemas--> dict
 And reversely :
-dict --deserialize (load) in pyros_msgs--> std_msgs.msg.[U]Int[8/16/32/64] --serialize in rospy--> ROSTCP
+dict --deserialize (load) in pyros_schemas--> std_msgs.msg.[U]Int[8/16/32/64] --serialize in rospy--> ROSTCP
 
 This helps pyros deal efficiently with data only as dicts without worrying about the underlying rospy implementation.
 

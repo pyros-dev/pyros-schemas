@@ -7,9 +7,9 @@ Defining Schema for optional ros types
 These add a boolean "initialized_" field to basic ros types, to allow for a field being there, or not.
 
 These Fields and Schema are meant to be used together with ROS message type serialization :
-ROSTCP --deserialize in rospy--> std_msgs.msg.* --serialize (dump) in pyros_msgs--> dict
+ROSTCP --deserialize in rospy--> std_msgs.msg.* --serialize (dump) in pyros_schemas--> dict
 And reversely :
-dict --deserialize (load) in pyros_msgs--> std_msgs.msg.* --serialize in rospy--> ROSTCP
+dict --deserialize (load) in pyros_schemas--> std_msgs.msg.* --serialize in rospy--> ROSTCP
 
 This helps pyros deal with data only as dicts without worrying about the underlying ROS implementation.
 

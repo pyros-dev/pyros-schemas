@@ -12,7 +12,11 @@ except ImportError:
     import std_msgs
     import pyros_msgs
 
-from .decorators import wraps_cls, with_explicitly_matched_type, with_explicitly_matched_optional_type
+
+# Useful to have for explicit import
+from .decorators import wraps_cls
+
+from .decorators import with_explicitly_matched_type, with_explicitly_matched_optional_type
 from .std_Empty import RosMsgEmpty
 from .std_Bool import RosFieldBool, RosMsgBool
 from .std_Int import (

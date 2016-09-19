@@ -9,7 +9,7 @@ setup_args = generate_distutils_setup(
         'pyros_schemas',
     ],
     package_dir={
-        'pyros_schemas': 'src/pyros_schemas'
+        'pyros_schemas': 'pyros_schemas'
     },
 )
 
