@@ -91,7 +91,7 @@ def with_explicitly_matched_type(ros_type):
             __doc__ = cls.__doc__
 
             @marshmallow.pre_dump
-            def _verify_ros_type(self, data, pass_original=True):
+            def _verify_ros_type(self, data):
                 # introspect data
                 if not isinstance(data, ros_type):
                     raise marshmallow.ValidationError('data type should be {0}'.format(ros_type))
@@ -134,7 +134,7 @@ def with_explicitly_matched_optional_type(ros_type, opt_field_names=['data']):
             initialized_ = marshmallow.fields.Boolean(required=True, dump_only=True)
 
             @marshmallow.pre_dump
-            def _verify_ros_type(self, data, pass_original=True):
+            def _verify_ros_type(self, data):
                 # introspect data
                 if not isinstance(data, ros_type):
                     raise marshmallow.ValidationError('data type should be {0}'.format(ros_type))
@@ -146,20 +146,6 @@ def with_explicitly_matched_optional_type(ros_type, opt_field_names=['data']):
                     for fn in opt_field_names:
                         data.pop(fn, None)
                 data.pop('initialized_')
-
-            @marshmallow.pre_load
-            def set_initialized(self, data):
-                for f in self.fields:
-                    if f != 'initialized_':
-                        try:
-                            data.get(f)  # if we can access the field it means we are dealing with a dict (or at least something with a get method)
-                        except AttributeError as ae:
-                            if len(self.fields) <= 2:  # auto assign here, only one field
-                                data = {f: data}
-                            else:  # give up and raise
-                                raise
-                return data
-
 
             @marshmallow.post_load
             def _make_ros_type(self, data):
