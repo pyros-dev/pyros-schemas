@@ -35,7 +35,6 @@ Also some serialization behavior adjustments have been done :
 
 """
 
-import marshmallow
 try:
     import std_msgs.msg as std_msgs
 except ImportError:
@@ -46,8 +45,28 @@ except ImportError:
     import std_msgs.msg as std_msgs
 
 
+# This is useful only if we need relative imports. Ref : http://stackoverflow.com/a/28154841/4006172
+# declaring __package__ if needed (this module is run individually)
+if __package__ is None and not __name__.startswith('pyros_schemas.'):
+    import sys
+    from pathlib2 import Path
+    top = Path(__file__).resolve().parents[1]
+    sys.path.append(str(top))
+    # Or
+    # from os.path import abspath, dirname
+    #
+    # top = abspath(__file__)
+    # for _ in range(4):
+    #     top = dirname(top)
+    # sys.path.append(top)
+
+    import pyros_schemas
+    __package__ = 'pyros_schemas'
+
 # To be able to run doctest directly we avoid relative import
 from .decorators import with_explicitly_matched_type
+
+import marshmallow
 
 # Both pyros and rospy serialization could eventually be combined, to serialize only once and get a dict.
 # TODO : investigate

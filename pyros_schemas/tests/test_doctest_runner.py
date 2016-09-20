@@ -54,6 +54,8 @@ def test_schema_http_statuscode_doctest():
     for t in doctest.DocTestSuite("pyros_schemas.http_statuscode"):
         yield t
 
+# TODO : check this in details : doesnt seem to fail when it should...
+
 # Just in case we run this directly
 if __name__ == '__main__':
     nose.runmodule(__name__)

@@ -22,6 +22,24 @@ except ImportError:
     pyros_setup.configurable_import().configure().activate()
     import pyros_msgs
 
+# This is useful only if we need relative imports. Ref : http://stackoverflow.com/a/28154841/4006172
+# declaring __package__ if needed (this module is run individually, via doctest or python call)
+if __package__ is None and not __name__.startswith('pyros_schemas.'):
+    import sys
+    from pathlib2 import Path
+    top = Path(__file__).resolve().parents[1]
+    sys.path.append(str(top))
+    # Or
+    # from os.path import abspath, dirname
+    #
+    # top = abspath(__file__)
+    # for _ in range(4):
+    #     top = dirname(top)
+    # sys.path.append(top)
+
+    import pyros_schemas
+    __package__ = 'pyros_schemas'
+
 
 # To be able to run doctest directly we avoid relative import
 from .decorators import with_explicitly_matched_type
@@ -36,32 +54,22 @@ class RosMsgHttpStatusCode(marshmallow.Schema):
 
     >>> schema = RosMsgHttpStatusCode()
 
-    >>> rosmsgTrue = pyros_msgs.HttpStatusCode(data=pyros_msgs.HttpStatusCode)
+    >>> rosmsgTrue = pyros_msgs.HttpStatusCode(code=pyros_msgs.HttpStatusCode.OK)
     >>> marshalledTrue, errors = schema.dump(rosmsgTrue)
     >>> marshmallow.pprint(marshalledTrue) if not errors else print("ERRORS {0}".format(errors))
-    {u'data': True}
+    {u'code': 200}
     >>> value, errors = schema.load(marshalledTrue)
     >>> type(value) if not errors else print("ERRORS {0}".format(errors))
-    <class 'std_msgs.msg._Bool.Bool'>
+    <class 'pyros_msgs.msg._HttpStatusCode.HttpStatusCode'>
     >>> print(value) if not errors else print("ERRORS {0}".format(errors))
-    data: True
-
-    >>> rosmsgFalse = std_msgs.Bool(data=False)
-    >>> marshalledFalse, errors = schema.dump(rosmsgFalse)
-    >>> marshmallow.pprint(marshalledFalse) if not errors else print("ERRORS {0}".format(errors))
-    {u'data': False}
-    >>> value, errors = schema.load(marshalledFalse)
-    >>> type(value) if not errors else print("ERRORS {0}".format(errors))
-    <class 'std_msgs.msg._Bool.Bool'>
-    >>> print(value) if not errors else print("ERRORS {0}".format(errors))
-    data: False
+    code: 200
 
     Load is the inverse of dump (if we ignore possible errors):
     >>> import random
-    >>> randomRosBool = std_msgs.Bool(data=random.choice([True, False]))
-    >>> schema.load(schema.dump(randomRosBool).data).data == randomRosBool
+    >>> randomStatus = pyros_msgs.HttpStatusCode(code=random.choice([pyros_msgs.HttpStatusCode.OK, pyros_msgs.HttpStatusCode.BAD]))
+    >>> schema.load(schema.dump(randomStatus).data).data == randomStatus
     True
     """
-    status_code = RosFieldUInt16()
+    code = RosFieldUInt16()
 
 

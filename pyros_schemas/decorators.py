@@ -147,6 +147,20 @@ def with_explicitly_matched_optional_type(ros_type, opt_field_names=['data']):
                         data.pop(fn, None)
                 data.pop('initialized_')
 
+            @marshmallow.pre_load
+            def set_initialized(self, data):
+                for f in self.fields:
+                    if f != 'initialized_':
+                        try:
+                            data.get(f)  # if we can access the field it means we are dealing with a dict (or at least something with a get method)
+                        except AttributeError as ae:
+                            if len(self.fields) <= 2:  # auto assign here, only one field
+                                data = {f: data}
+                            else:  # give up and raise
+                                raise
+                return data
+
+
             @marshmallow.post_load
             def _make_ros_type(self, data):
                 data = ros_type(**data)
