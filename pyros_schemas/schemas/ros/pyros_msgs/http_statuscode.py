@@ -37,7 +37,6 @@ if __package__ is None and not __name__.startswith('pyros_schemas.'):
     #     top = dirname(top)
     # sys.path.append(top)
 
-    import pyros_schemas
     __package__ = 'pyros_schemas'
 
 

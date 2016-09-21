@@ -72,7 +72,6 @@ import marshmallow
 # TODO : investigate
 # KISS as much as possible for now
 
-RosFieldString = marshmallow.fields.String
 
 
 @with_explicitly_matched_type(std_msgs.String)

@@ -60,9 +60,7 @@ except ImportError:
 
 # To be able to run doctest directly we avoid relative import
 from .decorators import with_explicitly_matched_type
-
-# Keeping field declaration separate in case we want to extend it later
-RosFieldBool = marshmallow.fields.Boolean
+from ..fields import RosBool
 
 
 @with_explicitly_matched_type(std_msgs.Bool)

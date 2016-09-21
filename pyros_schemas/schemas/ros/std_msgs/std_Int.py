@@ -69,21 +69,6 @@ from .decorators import with_explicitly_matched_type
 # Decorating all of them.
 
 
-#
-# Fields declaration
-# Since the rospy message type member field is already a python int,
-# we do not need anything special here, we rely on marshmallow python type validation.
-# Yet we are specifying each on in case we want to extend it later...
-#
-
-RosFieldInt8 = marshmallow.fields.Integer
-RosFieldUInt8 = marshmallow.fields.Integer
-RosFieldInt16 = marshmallow.fields.Integer
-RosFieldUInt16 = marshmallow.fields.Integer
-RosFieldInt32 = marshmallow.fields.Integer
-RosFieldUInt32 = marshmallow.fields.Integer
-RosFieldInt64 = marshmallow.fields.Integer
-RosFieldUInt64 = marshmallow.fields.Integer
 
 
 #

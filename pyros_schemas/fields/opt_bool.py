@@ -85,6 +85,7 @@ class PyrosMsgOptBool(marshmallow.Schema):
     data: False
 
     data field is optional. If not passed in original message object, it wont be in serialized object
+
     >>> rosmsgUninit = pyros_msgs.opt_bool()
     >>> marshalledUninit, errors = schema.dump(rosmsgUninit)
     >>> marshmallow.pprint(marshalledUninit) if not errors else print("ERRORS {0}".format(errors))
@@ -98,17 +99,20 @@ class PyrosMsgOptBool(marshmallow.Schema):
 
     Careful : passing 'initialized_' to the constructor will except.
     It is only an "internal" field and is not meant to be manipulated
+
     >>> rosmsgforcedInit = pyros_msgs.opt_bool(initialized_=True)
     Traceback (most recent call last):
      ...
     AttributeError: The field 'initialized_' is an internal field of pyros_msgs/opt_bool and should not be set by the user.
 
     If you want to pass fields default value, it should be done explicitly, like so :
+
     >>> pyros_msgs.opt_bool(data=bool())
     initialized_: True
     data: False
 
     Load is the inverse of dump (if we ignore possible errors):
+
     >>> import random
     >>> randomRosBool = pyros_msgs.opt_bool(data=random.choice([True, False]))
     >>> schema.load(schema.dump(randomRosBool).data).data == randomRosBool

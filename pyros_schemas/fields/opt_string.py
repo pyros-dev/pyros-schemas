@@ -40,11 +40,12 @@ if __package__ is None and not __name__.startswith('pyros_schemas.fields.'):
     #     top = dirname(top)
     # sys.path.append(top)
 
-    import pyros_schemas
     __package__ = 'pyros_schemas.fields'
 
 
-from ..decorators import with_explicitly_matched_type, with_explicitly_matched_optional_type
+from ..utils import with_explicitly_matched_type, with_explicitly_matched_optional_type
+from .opt_nested import OptNested
+
 from pyros_msgs import opt_string
 
 # From here we can pick this up from ROS if missing in python env.
@@ -76,6 +77,7 @@ class RosMsgOptStringSchema(marshmallow.Schema):
     data: fortytwo
 
     data field is optional. If not passed in original message object, it will be set to a default value for ROS, but it will not be in serialized dict
+
     >>> rosmsgUninit = pyros_msgs.opt_string()
     >>> marshalledUninit, errors = schema.dump(rosmsgUninit)
     >>> marshmallow.pprint(marshalledUninit) if not errors else print("ERRORS {0}".format(errors))
@@ -89,19 +91,21 @@ class RosMsgOptStringSchema(marshmallow.Schema):
 
     Careful : passing 'initialized_' to the constructor will except.
     It is only an "internal" field and is not meant to be manipulated
+
     >>> rosmsgforcedInit = pyros_msgs.opt_bool(initialized_=True)
     Traceback (most recent call last):
      ...
     AttributeError: The field 'initialized_' is an internal field of pyros_msgs/opt_bool and should not be set by the user.
 
     Load is the inverse of dump (if we ignore possible errors):
+
     >>> import random
     >>> randomRosString = pyros_msgs.opt_string(data=random.choice(['fortytwo', 'twentyone']))
     >>> schema.load(schema.dump(randomRosString).data).data == randomRosString
     True
 
-
     Reversely if you start by loading from a python dict :
+
     >>> value, errors = schema.load({'data': 'fortytwo'})
     >>> type(value) if not errors else print("ERRORS {0}".format(errors))
     <class 'pyros_msgs.msg._opt_string.opt_string'>
@@ -113,8 +117,8 @@ class RosMsgOptStringSchema(marshmallow.Schema):
     >>> marshmallow.pprint(marshalledAnswer) if not errors else print("ERRORS {0}".format(errors))
     {u'data': u'fortytwo'}
 
-
     Dump is the inverse of load (if we ignore possible errors):
+
     >>> import random
     >>> randomString = {'data' : random.choice(['fortytwo', 'twentyone'])}
     >>> w = schema.dump(schema.load(randomString).data).data
@@ -123,16 +127,10 @@ class RosMsgOptStringSchema(marshmallow.Schema):
 
     Note if you need to load from a python object, make use of the marshmallow pre_load decorator
 
-    """
-    initialized_ = marshmallow.fields.Boolean(required=True, dump_only=True)
-    data = marshmallow.fields.String()
+    When used inside another message, this schema should be used with OptNested optimal efficiency
 
+    First, lets create a small ros message class, containing an opt_string, just for the sake of this documentation:
 
-class OptString(marshmallow.fields.Nested):
-    """
-    This Custom field handles optional String Schema, to make the usage transparent for the developer
-
-    First, lets create a fake ros message class, just for the sake of this documentation:
     >>> import genpy
     >>> class fake_ros_string_msg(genpy.Message):
     ...    _full_text = "pyros_msgs/opt_string a_string"
@@ -147,17 +145,23 @@ class OptString(marshmallow.fields.Nested):
     ...      else:
     ...        self.a_string = ''
 
-    Then we define the corresponding Schema
-    >>> class MsgSchemaWithOptString(marshmallow.Schema):
-    ...     a_string = OptString()
+    Then we define the corresponding Schema.
 
-    Lets not forget to decorate our Schema
+    >>> class MsgSchemaWithOptString(marshmallow.Schema):
+    ...     a_string = OptNested(RosMsgOptStringSchema, 'data')
+
+    Note OptNested(RosMsgOptStringSchema, 'data') is already predefined as OptString
+
+    Lets not forget to decorate our new Schema
+
     >>> MsgSchemaWithOptString = with_explicitly_matched_type(fake_ros_string_msg)(MsgSchemaWithOptString)
 
     We can now use this schema
+
     >>> schema = MsgSchemaWithOptString(strict=True)
 
     This schema accept a string as usual
+
     >>> msgdict = {'a_string': 'fortytwo'}
     >>> unmarshalled, errors = schema.load(msgdict)
     >>> type(unmarshalled) if not errors else print("ERRORS {0}".format(errors))
@@ -172,6 +176,7 @@ class OptString(marshmallow.fields.Nested):
     {u'a_string': u'fortytwo'}
 
     And not something else :
+
     >>> msgdict = {'a_string': 42}
     >>> unmarshalled, errors = schema.load(msgdict)
     Traceback (most recent call last):
@@ -179,37 +184,15 @@ class OptString(marshmallow.fields.Nested):
     ValidationError: {'a_string': {'data': [u'Not a valid string.']}}
 
     But that string is completely optional in dictionary while producing default in ros message type
+
     >>> msgdict = {}
     >>> unmarshalled, errors = schema.load(msgdict)
     >>> type(unmarshalled) if not errors else print("ERRORS {0}".format(errors))
     <class 'opt_string.fake_ros_string_msg'>
     >>> print(unmarshalled) if not errors else print("ERRORS {0}".format(errors))
     a_string: ''
-
     """
+    initialized_ = marshmallow.fields.Boolean(required=True, dump_only=True)
+    data = marshmallow.fields.String()
 
-    # Ref : http://marshmallow.readthedocs.io/en/latest/_modules/marshmallow/fields.html#Nested
-
-    def __init__(self):
-        super(OptString, self).__init__(RosMsgOptStringSchema)
-
-    def _serialize(self, nested_obj, attr, obj):
-        # Adding the schema field
-
-        serialized = super(OptString, self)._serialize(nested_obj, attr, obj)
-        # if data is not in serialized this whole nested field should be considered missing
-        serialized = serialized.get('data', marshmallow.utils.missing)
-        return serialized
-
-    # TODO : after dump for optional msgs:
-    # def remove_empty(self, headers_dict):
-    #     # careful : empty dict (from Nested field) must be removed from serialized output
-    #     return {h: v for h, v in headers_dict.items() if v}
-
-    def _deserialize(self, value, attr, data):
-        # embedding an additional level to be able to have a internal schema transparently
-        value = {'data': value}
-
-        deserialized = super(OptString, self)._deserialize(value, attr, data)
-        return deserialized
-
+OptString = OptNested(RosMsgOptStringSchema, 'data')
