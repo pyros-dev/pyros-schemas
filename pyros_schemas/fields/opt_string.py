@@ -132,7 +132,7 @@ class OptString(marshmallow.fields.Nested):
     """
     This Custom field handles optional String Schema, to make the usage transparent for the developer
 
-    First, lets create a fake ros message, just used for this documentation:
+    First, lets create a fake ros message class, just for the sake of this documentation:
     >>> import genpy
     >>> class fake_ros_string_msg(genpy.Message):
     ...    _full_text = "pyros_msgs/opt_string a_string"
@@ -147,7 +147,7 @@ class OptString(marshmallow.fields.Nested):
     ...      else:
     ...        self.a_string = ''
 
-    Then we definine the corresponding Schema
+    Then we define the corresponding Schema
     >>> class MsgSchemaWithOptString(marshmallow.Schema):
     ...     a_string = OptString()
 
@@ -197,8 +197,8 @@ class OptString(marshmallow.fields.Nested):
         # Adding the schema field
 
         serialized = super(OptString, self)._serialize(nested_obj, attr, obj)
-
-        serialized = serialized['data']
+        # if data is not in serialized this whole nested field should be considered missing
+        serialized = serialized.get('data', marshmallow.utils.missing)
         return serialized
 
     # TODO : after dump for optional msgs:

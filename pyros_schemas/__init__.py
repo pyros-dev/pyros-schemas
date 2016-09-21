@@ -37,7 +37,7 @@ from .opt_String import PyrosMsgOptString
 from .http_statuscode import RosMsgHttpStatusCode
 
 # New gen
-from .fields import Opt_String
+from .fields import OptString
 
 __all__ = [
     'with_explicitly_matched_type',
@@ -58,5 +58,5 @@ __all__ = [
 
     'RosMsgHttpStatusCode',
 
-    'Opt_String',
+    'OptString',
 ]
