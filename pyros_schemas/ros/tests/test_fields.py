@@ -14,13 +14,13 @@ except ImportError:
     import std_msgs
 
 
-# import ros field types
-from pyros_schemas.fields import (
+# absolute import ros field types
+from pyros_schemas.ros.fields import (
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
     RosFloat32, RosFloat64,
-    RosString,
+    RosString, RosTextString,
 )
 
 
@@ -47,7 +47,6 @@ def fromros(ros_msg, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptio
         # check the serialized value is the same as the value of that field in the original message
         # We need the type conversion to deal with serialized object in different format than ros data (like string)
         assert serialized == PyType(ros_msg.data)
-
         deserialized = field.deserialize(serialized)
 
         # Check the field value we obtain is the same, both type and value.
@@ -67,7 +66,6 @@ def frompy(py_inst, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exception
 
     try:
         # verifying parameter type can at least convert (useful for unicode - str correspondance)
-        old_py_inst = py_inst
         PyType(py_inst)  # just try dynamic typing - python style - to make sure it wont except
 
         field = FieldType()
@@ -297,10 +295,31 @@ def test_ros_field_string():
     yield frompy, u'fortytwo', RosString, std_msgs.msg.String, str, str
     # also test (None ?) and default value
     # TMP not doing this for now... until we define proper behavior
-    # yield frompy, None, RosString, std_msgs.msg.String, unicode, str
+    # yield frompy, None, RosString, std_msgs.msg.String, str, str
     yield frompy, str(), RosString, std_msgs.msg.String, str, str
     # CAREFUL this breaks on python 3
     yield frompy, unicode(), RosString, std_msgs.msg.String, str, str
+
+
+def test_ros_field_textstring():
+    yield fromros, std_msgs.msg.String(data='fortytwo'), RosTextString, std_msgs.msg.String, unicode, str
+    # this should except since Ros string field accepts unicode as data without validation,
+    # but then something will break later on...
+    yield fromros, std_msgs.msg.String(data=u'fortytwo'), RosTextString, std_msgs.msg.String, unicode, str, (AssertionError,)
+    # also test None and default value
+    yield fromros, std_msgs.msg.String(data=None), RosTextString, std_msgs.msg.String, unicode, str
+    yield fromros, std_msgs.msg.String(), RosTextString, std_msgs.msg.String, unicode, str
+
+    # Reverse test
+
+    # Test all explicit values when possible, or pick a few meaningful ones
+    yield frompy, 'fortytwo', RosTextString, std_msgs.msg.String, unicode, str
+    yield frompy, u'fortytwo', RosTextString, std_msgs.msg.String, unicode, str
+    # also test (None ?) and default value
+    # TMP not doing this for now... until we define proper behavior
+    # yield frompy, None, RosString, std_msgs.msg.String, unicode, str
+    yield frompy, str(), RosTextString, std_msgs.msg.String, unicode, str
+    yield frompy, unicode(), RosTextString, std_msgs.msg.String, unicode, str
 
 # # Since the rospy message type member field is already a python int,
 # # we do not need anything special here, we rely on marshmallow python type validation.
@@ -310,6 +329,8 @@ def test_ros_field_string():
 #
 # # CAREFUL with RosNested : Ros does not allow
 # RosNested = functools.partial(marshmallow.fields.Nested, required=True)
+
+# TODO : RosNested, RosTime, RosDuration,
 
 
 # Just in case we run this directly

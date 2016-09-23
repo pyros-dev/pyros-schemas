@@ -25,12 +25,13 @@ except ImportError:
     pyros_setup.configurable_import().configure().activate()
     import pyros_msgs
 
+
 # This is useful only if we need relative imports. Ref : http://stackoverflow.com/a/28154841/4006172
 # declaring __package__ if needed (this module is run individually)
-if __package__ is None and not __name__.startswith('pyros_schemas.'):
+if __package__ is None and not __name__.startswith('pyros_schemas.ros.pyros_msgs.'):
     import sys
     from pathlib2 import Path
-    top = Path(__file__).resolve().parents[1]
+    top = Path(__file__).resolve().parents[3]
     sys.path.append(str(top))
     # Or
     # from os.path import abspath, dirname
@@ -40,88 +41,53 @@ if __package__ is None and not __name__.startswith('pyros_schemas.'):
     #     top = dirname(top)
     # sys.path.append(top)
 
-    import pyros_schemas
-    __package__ = 'pyros_schemas'
+    __package__ = 'pyros_schemas.ros.pyros_msgs'
 
 
-from .decorators import with_explicitly_matched_optional_type
-from pyros_msgs import opt_bool
+# To be able to run doctest directly we avoid relative import
+from ..decorators import with_explicitly_matched_type
+from ..fields import RosBool
 
 # From here we can pick this up from ROS if missing in python env.
 import marshmallow
 
-# Keeping field declaration separate in case we want to extend it later
-RosFieldBool = marshmallow.fields.Boolean
-
-
-@with_explicitly_matched_optional_type(opt_bool)
-class PyrosMsgOptBool(marshmallow.Schema):
+@with_explicitly_matched_type(pyros_msgs.opt_empty)
+class PyrosMsgOptEmpty(marshmallow.Schema):
     """
     PyrosMsgOptBool Schema handles serialization from pyros_msgs.opt.Bool to python dict
     and deserialization from python dict to pyros_msgs.opt.Bool
 
     >>> schema = PyrosMsgOptBool()
 
-    >>> rosmsgTrue = pyros_msgs.opt_bool(data=True)
+    >>> rosmsgTrue = pyros_msgs.opt_empty()
     >>> marshalledTrue, errors = schema.dump(rosmsgTrue)
     >>> marshmallow.pprint(marshalledTrue) if not errors else print("ERRORS {0}".format(errors))
-    {u'data': True}
+    {}
     >>> value, errors = schema.load(marshalledTrue)
     >>> type(value) if not errors else print("ERRORS {0}".format(errors))
     <class 'pyros_msgs.msg._opt_bool.opt_bool'>
     >>> print(value) if not errors else print("ERRORS {0}".format(errors))
     initialized_: True
-    data: True
-
-    >>> rosmsgFalse = pyros_msgs.opt_bool(data=False)
-    >>> marshalledFalse, errors = schema.dump(rosmsgFalse)
-    >>> marshmallow.pprint(marshalledFalse) if not errors else print("ERRORS {0}".format(errors))
-    {u'data': False}
-    >>> value, errors = schema.load(marshalledFalse)
-    >>> type(value) if not errors else print("ERRORS {0}".format(errors))
-    <class 'pyros_msgs.msg._opt_bool.opt_bool'>
-    >>> print(value) if not errors else print("ERRORS {0}".format(errors))
-    initialized_: True
-    data: False
-
-    data field is optional. If not passed in original message object, it wont be in serialized object
-
-    >>> rosmsgUninit = pyros_msgs.opt_bool()
-    >>> marshalledUninit, errors = schema.dump(rosmsgUninit)
-    >>> marshmallow.pprint(marshalledUninit) if not errors else print("ERRORS {0}".format(errors))
-    {}
-    >>> value, errors = schema.load(marshalledUninit)
-    >>> type(value) if not errors else print("ERRORS {0}".format(errors))
-    <class 'pyros_msgs.msg._opt_bool.opt_bool'>
-    >>> print(value) if not errors else print("ERRORS {0}".format(errors))
-    initialized_: False
-    data: False
 
     Careful : passing 'initialized_' to the constructor will except.
     It is only an "internal" field and is not meant to be manipulated
-
     >>> rosmsgforcedInit = pyros_msgs.opt_bool(initialized_=True)
     Traceback (most recent call last):
      ...
-    AttributeError: The field 'initialized_' is an internal field of pyros_msgs/opt_bool and should not be set by the user.
-
-    If you want to pass fields default value, it should be done explicitly, like so :
-
-    >>> pyros_msgs.opt_bool(data=bool())
-    initialized_: True
-    data: False
+    AttributeError: initialized_ is not an attribute of pyros_msgs.opt_bool
 
     Load is the inverse of dump (if we ignore possible errors):
-
     >>> import random
-    >>> randomRosBool = pyros_msgs.opt_bool(data=random.choice([True, False]))
-    >>> schema.load(schema.dump(randomRosBool).data).data == randomRosBool
+    >>> randomRosEmpty = pyros_msgs.opt_empty()
+    >>> schema.load(schema.dump(randomRosEmpty).data).data == randomRosEmpty
     True
     """
-    data = RosFieldBool()
+    # 'initialized_' is required for the schema, but the user doesnt have to set it explicitly.
+    initialized_ = RosBool(required=True, dump_only=True)
 
-
-
+    @marshmallow.post_dump
+    def unset_data(self, data):
+        data.pop('initialized_')
 
 
 

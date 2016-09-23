@@ -27,10 +27,10 @@ except ImportError:
 
 # This is useful only if we need relative imports. Ref : http://stackoverflow.com/a/28154841/4006172
 # declaring __package__ if needed (this module is run individually)
-if __package__ is None and not __name__.startswith('pyros_schemas.fields.'):
+if __package__ is None and not __name__.startswith('pyros_schemas.ros.pyros_msgs.'):
     import sys
     from pathlib2 import Path
-    top = Path(__file__).resolve().parents[2]
+    top = Path(__file__).resolve().parents[3]
     sys.path.append(str(top))
     # Or
     # from os.path import abspath, dirname
@@ -40,23 +40,19 @@ if __package__ is None and not __name__.startswith('pyros_schemas.fields.'):
     #     top = dirname(top)
     # sys.path.append(top)
 
-    __package__ = 'pyros_schemas.fields'
+    __package__ = 'pyros_schemas.ros.pyros_msgs'
 
 
-from ..utils import with_explicitly_matched_type, with_explicitly_matched_optional_type
-from .opt_nested import OptNested
+from ..decorators import with_explicitly_matched_type, with_explicitly_matched_optional_type
+from ..fields import RosString, RosBool
 
-from pyros_msgs import opt_string
-
+import pyros_msgs
 # From here we can pick this up from ROS if missing in python env.
 import marshmallow
 
-# Keeping field declaration separate in case we want to extend it later
-RosFieldString = marshmallow.fields.String
 
-
-@with_explicitly_matched_optional_type(opt_string, opt_field_names=['data'])
-class RosMsgOptStringSchema(marshmallow.Schema):
+@with_explicitly_matched_optional_type(pyros_msgs.opt_string, opt_field_names=['data'])
+class PyrosMsgOptString(marshmallow.Schema):
     """
     Internal Schema to handle optional string ROS message type
 
@@ -147,6 +143,7 @@ class RosMsgOptStringSchema(marshmallow.Schema):
 
     Then we define the corresponding Schema.
 
+    >>> from pyros_schemas.ros.pyros_msgs import OptNested
     >>> class MsgSchemaWithOptString(marshmallow.Schema):
     ...     a_string = OptNested(RosMsgOptStringSchema, 'data')
 
@@ -192,7 +189,7 @@ class RosMsgOptStringSchema(marshmallow.Schema):
     >>> print(unmarshalled) if not errors else print("ERRORS {0}".format(errors))
     a_string: ''
     """
-    initialized_ = marshmallow.fields.Boolean(required=True, dump_only=True)
-    data = marshmallow.fields.String()
+    initialized_ = RosBool(required=True, dump_only=True)
+    data = RosString()
 
-OptString = OptNested(RosMsgOptStringSchema, 'data')
+

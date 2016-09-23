@@ -89,68 +89,20 @@ def with_explicitly_matched_type(ros_type):
             # We cannot have a doc here, because it is not writeable in python 2.7
             # instead we reuse the one from the wrapped class
             __doc__ = cls.__doc__
+            matched_ros_type = ros_type
 
             @marshmallow.pre_dump
             def _verify_ros_type(self, data):
                 # introspect data
                 if not isinstance(data, ros_type):
-                    raise marshmallow.ValidationError('data type should be {0}'.format(ros_type))
+                    raise marshmallow.ValidationError('data type should be {0}'.format(self.matched_ros_type))
 
             @marshmallow.post_load
             def _make_ros_type(self, data):
-                data = ros_type(**data)
+                data = self.matched_ros_type(**data)
                 return data
 
         return Wrapper
     return schema_explicitly_matched_type_decorator
 
 
-def with_explicitly_matched_optional_type(ros_type, opt_field_names=['data']):
-
-    """
-    Decorator to add type check and type creation for a schema
-    :param ros_type: the ros_type to check for and generate
-    :param opt_field_names: list of names for the optional fields
-    :return:
-
-    TODO  : doctest
-    """
-
-    def schema_explicitly_matched_optional_type_decorator(cls):
-        assert isinstance(cls, marshmallow.schema.SchemaMeta)
-
-        # dynamically defining a post_dump method if we are dealing with an optional schema
-
-        @wraps_cls(cls)
-        class Wrapper(cls):
-            # TODO : closure
-            # TODO : proxy ?
-            # This wrapper inherits. Maybe a proxy would be better ?
-            # We cannot have a doc here, because it is not writeable in python 2.7
-            # instead we reuse the one from the wrapped class
-            __doc__ = cls.__doc__
-
-            # 'initialized_' is required for the schema, but the user doesnt have to set it explicitly.
-            initialized_ = marshmallow.fields.Boolean(required=True, dump_only=True)
-
-            @marshmallow.pre_dump
-            def _verify_ros_type(self, data):
-                # introspect data
-                if not isinstance(data, ros_type):
-                    raise marshmallow.ValidationError('data type should be {0}'.format(ros_type))
-
-            @marshmallow.post_dump
-            def unset_data(self, data):
-                # if data was not initialized, it means the intent was to not send it in the first place
-                if not data['initialized_']:
-                    for fn in opt_field_names:
-                        data.pop(fn, None)
-                data.pop('initialized_')
-
-            @marshmallow.post_load
-            def _make_ros_type(self, data):
-                data = ros_type(**data)
-                return data
-
-        return Wrapper
-    return schema_explicitly_matched_optional_type_decorator

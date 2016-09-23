@@ -2,9 +2,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 """
-Defining field for pyros_msgs optional nested types
+Defining field for pyros_msgs optional ros message types
 
-It adds logic to handle default, none, null and missing values in a nested schema, given that ROS does NOT allow optional message field.
+These add a boolean "initialized_" field to basic ros types, to allow for a field being there, or not.
+
+These Fields and Schema are meant to be used together with ROS message type serialization :
+ROSTCP --deserialize in rospy--> std_msgs.msg.* --serialize (dump) in pyros_schemas--> dict
+And reversely :
+dict --deserialize (load) in pyros_schemas--> std_msgs.msg.* --serialize in rospy--> ROSTCP
 
 This helps pyros deal with data only as dicts without worrying about the underlying ROS implementation.
 
@@ -22,10 +27,10 @@ except ImportError:
 
 # This is useful only if we need relative imports. Ref : http://stackoverflow.com/a/28154841/4006172
 # declaring __package__ if needed (this module is run individually)
-if __package__ is None and not __name__.startswith('pyros_schemas.fields.'):
+if __package__ is None and not __name__.startswith('pyros_schemas.ros.pyros_msgs.'):
     import sys
     from pathlib2 import Path
-    top = Path(__file__).resolve().parents[2]
+    top = Path(__file__).resolve().parents[3]
     sys.path.append(str(top))
     # Or
     # from os.path import abspath, dirname
@@ -35,8 +40,7 @@ if __package__ is None and not __name__.startswith('pyros_schemas.fields.'):
     #     top = dirname(top)
     # sys.path.append(top)
 
-    import pyros_schemas
-    __package__ = 'pyros_schemas.fields'
+    __package__ = 'pyros_schemas.ros.pyros_msgs'
 
 
 # From here we can pick this up from ROS if missing in python env.
@@ -58,7 +62,7 @@ class OptNested(marshmallow.fields.Nested):
         # Adding the schema field
 
         serialized = super(OptNested, self)._serialize(nested_obj, attr, obj)
-        # if data is not in serialized this whole nested field should be considered missing
+        # if _opt_field_name is not in serialized this whole nested field should be considered missing
         serialized = serialized.get(self._opt_field_name, marshmallow.missing)
         return serialized
 
@@ -68,4 +72,3 @@ class OptNested(marshmallow.fields.Nested):
 
         deserialized = super(OptNested, self)._deserialize(value, attr, data)
         return deserialized
-
