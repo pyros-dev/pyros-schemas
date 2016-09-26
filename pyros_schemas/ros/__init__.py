@@ -10,6 +10,8 @@ from .fields import (
     RosFloat32, RosFloat64,
     RosString, RosTextString,
     RosOpt,
+    RosNested,
+    RosList,
 )
 
 from .std_msgs_schemas import (
@@ -19,30 +21,3 @@ from .std_msgs_schemas import (
     RosMsgFloat32, RosMsgFloat64,
     RosMsgString,
 )
-
-# from .fields import (
-#     RosTextString,
-# )
-#
-# from .fields_extra import (
-#     OptNested,
-#     OptEmpty,
-#     OptBool,
-#     OptString,
-# )
-#
-# __all__ = [
-#     'with_explicitly_matched_type',
-#     'with_explicitly_matched_optional_type',
-#
-#     'RosBool',
-#     'RosInt8', 'RosInt16', 'RosInt32', 'RosInt64',
-#     'RosUInt8', 'RosUInt16', 'RosUInt32', 'RosUInt64',
-#     'RosFloat32', 'RosFloat64',
-#     'RosString',
-#
-#     'RosTextString',
-#     'OptNested',
-#     'OptEmpty',
-#     'OptString',
-# ]

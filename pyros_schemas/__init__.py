@@ -15,10 +15,14 @@ from __future__ import print_function
 from .ros import (
     with_explicitly_matched_type,
     RosBool,
-    RosInt8,
+    RosInt8, RosInt16, RosInt32, RosInt64,
+    RosUInt8, RosUInt16, RosUInt32, RosUInt64,
+    RosFloat32, RosFloat64,
     RosString,
     RosTextString,
     RosOpt,
+    RosNested,
+    RosList,
 )
 
 __all__ = [
@@ -29,4 +33,7 @@ __all__ = [
     'RosUInt8', 'RosUInt16', 'RosUInt32', 'RosUInt64',
     'RosFloat32', 'RosFloat64',
     'RosString', 'RosTextString',
+    'RosOpt',
+    'RosNested',
+    'RosList',
 ]

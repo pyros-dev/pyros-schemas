@@ -154,6 +154,10 @@ class RosTextString(RosString):
 RosNested = functools.partial(marshmallow.fields.Nested, required=True)
 
 
+# CAREFUL with RosList : Ros works differently with lists...
+RosList = functools.partial(marshmallow.fields.List, required=True)
+
+
 def gen_ros_time_schema():
     # this can be a field for Ros definition, but is actually a schema that need to match rostime
     @with_explicitly_matched_type(genpy.rostime.Time)
