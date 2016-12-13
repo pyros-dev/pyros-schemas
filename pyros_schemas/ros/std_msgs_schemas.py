@@ -69,6 +69,8 @@ from .fields import (
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
     RosFloat32, RosFloat64,
     RosString, RosTextString,
+)
+from.schema_fields import (
     RosTime,
     RosDuration,
 )

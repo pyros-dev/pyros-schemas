@@ -326,13 +326,6 @@ def test_ros_field_textstring():
 # # Yet we are specifying each on in case we want to extend it later...
 #
 
-#
-# # CAREFUL with RosNested : Ros does not allow
-# RosNested = functools.partial(marshmallow.fields.Nested, required=True)
-
-# TODO : RosNested, RosTime, RosDuration,
-
-
 # Just in case we run this directly
 if __name__ == '__main__':
     nose.runmodule(__name__)

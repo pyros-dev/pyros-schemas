@@ -11,7 +11,7 @@ import nose
 from pyros_schemas.ros import wraps_cls
 
 # public decorators
-from pyros_schemas.ros import with_explicitly_matched_type, with_explicitly_matched_optional_type
+from pyros_schemas.ros import with_explicitly_matched_type #, with_explicitly_matched_optional_type
 
 
 #

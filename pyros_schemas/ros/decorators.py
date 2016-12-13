@@ -8,7 +8,7 @@ import functools
 
 """
 Defining decorators to help with Schema generation for ROS message type <-> pyros dict conversion
-
+This is useful for detailed definition of field serialization, like in schema_fields.py module
 """
 
 
@@ -69,7 +69,7 @@ def wraps_cls(original_cls):
 
 # This is for explicit matching types.
 
-def with_explicitly_matched_type(ros_type):
+def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
     """
     Decorator to add type check and type creation for a schema
     :param ros_type: the ros_type to check for and generate
@@ -89,20 +89,26 @@ def with_explicitly_matched_type(ros_type):
             # We cannot have a doc here, because it is not writeable in python 2.7
             # instead we reuse the one from the wrapped class
             __doc__ = cls.__doc__
-            matched_ros_type = ros_type
+            _valid_ros_type = valid_ros_type
+            _generated_ros_type = generated_ros_type or valid_ros_type
 
             @marshmallow.pre_dump
             def _verify_ros_type(self, data):
                 # introspect data
-                if not isinstance(data, ros_type):
+                if not isinstance(data, self._valid_ros_type):
                     raise marshmallow.ValidationError('data type should be {0}'.format(self.matched_ros_type))
 
             @marshmallow.post_load
             def _make_ros_type(self, data):
-                data = self.matched_ros_type(**data)
+                data = self._generated_ros_type(**data)
                 return data
 
         return Wrapper
     return schema_explicitly_matched_type_decorator
 
 
+# Statically proxying marshmallow useful decorators for methods
+pre_load = marshmallow.pre_load
+post_load = marshmallow.post_load
+pre_dump = marshmallow.pre_dump
+post_dump = marshmallow.post_dump

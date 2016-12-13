@@ -53,7 +53,6 @@ except ImportError:
     import genpy
 
 
-
 # From here we can pick this up from ROS if missing in python env.
 
 import functools
@@ -64,24 +63,80 @@ from .decorators import with_explicitly_matched_type
 # Keeping field declaration separate in case we want to extend it later.
 # ROS doesnt allow missing field -> everything is required.
 
-RosBool = functools.partial(marshmallow.fields.Boolean, required=True)
+# defining subclasses, to be able to extend them if needed
+
+
+class RosBool(marshmallow.fields.Boolean):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosBool, self).__init__(*args, **kwargs)
 
 
 # Since the rospy message type member field is already a python int,
 # we do not need anything special here, we rely on marshmallow python type validation.
 # Yet we are specifying each on in case we want to extend it later...
 
-RosInt8 = functools.partial(marshmallow.fields.Integer, required=True)
-RosUInt8 = functools.partial(marshmallow.fields.Integer, required=True)
-RosInt16 = functools.partial(marshmallow.fields.Integer, required=True)
-RosUInt16 = functools.partial(marshmallow.fields.Integer, required=True)
-RosInt32 = functools.partial(marshmallow.fields.Integer, required=True)
-RosUInt32 = functools.partial(marshmallow.fields.Integer, required=True)
-RosInt64 = functools.partial(marshmallow.fields.Integer, required=True)
-RosUInt64 = functools.partial(marshmallow.fields.Integer, required=True)
+class RosInt8(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosInt8, self).__init__(*args, **kwargs)
 
-RosFloat32 = functools.partial(marshmallow.fields.Float, required=True)
-RosFloat64 = functools.partial(marshmallow.fields.Float, required=True)
+
+class RosUInt8(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosUInt8, self).__init__(*args, **kwargs)
+
+
+class RosInt16(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosInt16, self).__init__(*args, **kwargs)
+
+
+class RosUInt16(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosUInt16, self).__init__(*args, **kwargs)
+
+
+class RosInt32(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosInt32, self).__init__(*args, **kwargs)
+
+
+class RosUInt32(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosUInt32, self).__init__(*args, **kwargs)
+
+
+class RosInt64(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosInt64, self).__init__(*args, **kwargs)
+
+
+class RosUInt64(marshmallow.fields.Integer):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)  # setting required to true by default
+        super(RosUInt64, self).__init__(*args, **kwargs)
+
+
+class RosFloat32(marshmallow.fields.Float):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosFloat32, self).__init__(*args, **kwargs)
+
+
+class RosFloat64(marshmallow.fields.Float):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosFloat64, self).__init__(*args, **kwargs)
+
+
+RosSchema = marshmallow.Schema
 
 
 # We need to be strict with strings, since ROS should have only str,
@@ -104,14 +159,15 @@ class RosString(marshmallow.fields.Field):
     If you need unicode serialization, have a look at RosTextString.
 
     No marshmallow field class for this, so we're declaring it here.
-
-    :param kwargs: The same keyword arguments that :class:`Field` receives. required is set to True by default.
     """
     default_error_messages = {
         'invalid': 'Not a valid binary string.'
     }
 
     def __init__(self, **kwargs):
+        """
+        :param kwargs: The same keyword arguments that :class:`Field` receives. required is set to True by default.
+        """
         super(RosString, self).__init__(required=True, **kwargs)
 
     def _serialize(self, value, attr, obj):
@@ -136,8 +192,6 @@ class RosTextString(RosString):
     For using with ROS we deserialize as str / bytes
 
     No marshmallow field class for this, so we're declaring it here.
-
-    :param kwargs: The same keyword arguments that :class:`Field` receives. required is set to True by default.
     """
     default_error_messages = {
         'invalid': 'Not a valid text string.'
@@ -151,53 +205,32 @@ class RosTextString(RosString):
 
 
 # CAREFUL with RosNested : Ros works differently with nesting...
-RosNested = functools.partial(marshmallow.fields.Nested, required=True)
+# Check RosTime and Rosduration for example of how to use it
+class RosNested(marshmallow.fields.Nested):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        # TODO : set the nested schema
+        # kwargs['nested'] = _RosTimeVerbatim  # forcing nested to be our schema
+        super(RosNested, self).__init__(*args, **kwargs)
+
+    def _serialize(self, value, attr, obj):
+        # tv_dict = super(RosTimeVerbatim, self)._serialize(value, attr, obj)
+        # # TODO : generic conversion from dict to python type
+        # t = rospy.Time(**tv_dict)  # we let this explicitely except if some value is wrong here...
+        # return t
+        return super(RosNested, self)._serialize(value, attr, obj)
+
+    def _deserialize(self, value, attr, obj):
+        # # TODO : generic conversion from python type to dict
+        # value_dict = {'secs': value.secs, 'nsecs': value.nsecs}
+        # v = super(RosTimeVerbatim, self)._deserialize(value_dict, attr, obj)
+        # return v
+        return super(RosNested, self)._deserialize(value, attr, obj)
 
 
 # CAREFUL with RosList : Ros works differently with lists...
-RosList = functools.partial(marshmallow.fields.List, required=True)
+class RosList(marshmallow.fields.List):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)   # setting required to true by default
+        super(RosList, self).__init__(*args, **kwargs)
 
-
-def gen_ros_time_schema():
-    # this can be a field for Ros definition, but is actually a schema that need to match rostime
-    @with_explicitly_matched_type(genpy.rostime.Time)
-    class _RosFieldTime(marshmallow.Schema):
-        secs = RosInt32()
-        nsecs = RosInt32()
-    return _RosFieldTime
-
-RosTime = functools.partial(RosNested, nested=gen_ros_time_schema())
-
-
-def gen_ros_duration_schema():
-    # this can be a field for Ros definition, but is actually a schema that need to match rosduration
-    @with_explicitly_matched_type(genpy.rostime.Duration)
-    class _RosFieldDuration(marshmallow.Schema):
-        secs = RosInt32()
-        nsecs = RosInt32()
-    return _RosFieldDuration
-
-
-RosDuration = functools.partial(RosNested, nested=gen_ros_duration_schema())
-
-
-
-class RosOpt(marshmallow.fields.List):
-    """Any ros field, optional in serialized form. In Ros is it represented by a list of that field type, and can be empty.
-
-    :param kwargs: The same keyword arguments that :class:`List` receives. required is set to True by default.
-    """
-    def __init__(self, cls_or_instance, **kwargs):
-        super(RosOpt, self).__init__(cls_or_instance, **kwargs)
-
-    def _serialize(self, value, attr, obj):
-        new_value = super(RosOpt, self)._serialize(value, attr, obj)
-        if len(new_value) == 0:
-            return marshmallow.missing  # if we have no element in value list this field is missing.
-        else:
-            return new_value[0]  # we only return the first element, this represent an optional serialized field.
-
-    def _deserialize(self, value, attr, data):
-        # value should not be a list : serialized for has one field (optional)
-        # It seems there is no need to modify data here...
-        return super(RosOpt, self)._deserialize([value], attr, data)
