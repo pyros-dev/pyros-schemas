@@ -15,7 +15,7 @@ except ImportError:
 
 
 # absolute import ros field types
-from pyros_schemas.ros.fields import (
+from pyros_schemas.ros.basic_fields import (
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
@@ -40,18 +40,18 @@ def fromros(ros_msg, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptio
         assert hasattr(ros_msg, 'data')
         assert isinstance(ros_msg.data, PyTypeRos)
 
-        serialized = field.serialize('data', ros_msg)
+        deserialized = field.deserialize(ros_msg.data)
 
         # check the serialized version is the type we expect
-        assert isinstance(serialized, PyType)
+        assert isinstance(deserialized, PyType)
         # check the serialized value is the same as the value of that field in the original message
         # We need the type conversion to deal with serialized object in different format than ros data (like string)
-        assert serialized == PyType(ros_msg.data)
-        deserialized = field.deserialize(serialized)
+        assert deserialized == PyType(ros_msg.data)
+        serialized = field.serialize(0, [deserialized])
 
         # Check the field value we obtain is the same, both type and value.
-        assert isinstance(deserialized, type(ros_msg.data))
-        assert deserialized == ros_msg.data
+        assert isinstance(serialized, type(ros_msg.data))
+        assert serialized == ros_msg.data
     except Expected_Exceptions:
         pass
     except Exception:
@@ -70,22 +70,22 @@ def frompy(py_inst, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exception
 
         field = FieldType()
 
-        deserialized = field.deserialize(py_inst)
+        serialized = field.serialize(0, [py_inst])
 
         # Check the field value we obtain is the expected one and can be used to build a ROS message.
-        assert isinstance(deserialized, PyTypeRos)
-        assert deserialized == py_inst
+        assert isinstance(serialized, PyTypeRos)
+        assert serialized == py_inst
 
-        ros_msg = RosMsgType(data=deserialized)
+        ros_msg = RosMsgType(data=serialized)
         assert isinstance(ros_msg.data, PyTypeRos)
         assert ros_msg.data == py_inst
 
-        serialized = field.serialize('data', ros_msg)
+        deserialized = field.deserialize(ros_msg.data)
 
         # check the serialized version is the type we expect
-        assert isinstance(serialized, PyType)
+        assert isinstance(deserialized, PyType)
         # check the serialized value is the same as the original object
-        assert serialized == py_inst
+        assert deserialized == py_inst
 
     except Expected_Exceptions:
         pass

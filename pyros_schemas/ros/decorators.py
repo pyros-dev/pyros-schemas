@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import inspect
 import sys
 
 import marshmallow
@@ -69,6 +70,30 @@ def wraps_cls(original_cls):
 
 # This is for explicit matching types.
 
+# Ref : http://wiki.ros.org/msg
+if sys.version_info >= (3, 0):
+    ros_python_type_mapping = {
+        'bool': bool,
+        'int8': int, 'int16': int, 'int32': int, 'int64': int,
+        'uint8': int, 'uint16': int, 'uint32': int, 'uint64': int,
+        'float32': float, 'float64': float,
+        'string': str,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
+        #'string': RosTextString,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
+        # Time ???
+    }
+else:  # 2.7
+    ros_python_type_mapping = {
+        'bool': bool,
+        'int8': int, 'int16': int, 'int32': int, 'int64': long,
+        'uint8': int, 'uint16': int, 'uint32': int, 'uint64': long,
+        'float32': float, 'float64': float,
+        'string': str,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
+        #'string': RosTextString,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
+        # Time ???
+    }
+
+
+# TODO : get rid of this. It is a bit overkill (ros schema class does the job now...)
 def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
     """
     Decorator to add type check and type creation for a schema
@@ -83,7 +108,7 @@ def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
 
         @wraps_cls(cls)
         class Wrapper(cls):
-            # TODO : closure
+            # TODO : closure (IN PROGRESS check helpers.py module)
             # TODO : proxy ?
             # This wrapper inherits. Maybe a proxy would be better ?
             # We cannot have a doc here, because it is not writeable in python 2.7
@@ -92,14 +117,56 @@ def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
             _valid_ros_type = valid_ros_type
             _generated_ros_type = generated_ros_type or valid_ros_type
 
-            @marshmallow.pre_dump
-            def _verify_ros_type(self, data):
-                # introspect data
-                if not isinstance(data, self._valid_ros_type):
-                    raise marshmallow.ValidationError('data type should be {0}'.format(self.matched_ros_type))
+            @marshmallow.validates_schema
+            def _validate_ros_type(self, data):
+                # extracting members from ROS type (we do not check internal type, we will just try conversion - python style)
+                if hasattr(self._valid_ros_type, '__slots__'):  # ROS style
+                    slots = []
+                    ancestors = inspect.getmro(self._valid_ros_type)
+                    for a in ancestors:
+                        slots += a.__slots__ if hasattr(a, '__slots__') else []
+                    # Remove special ROS slots
+                    if '_connection_header' in slots:
+                        slots.remove('_connection_header')
+                    rtkeys = slots
+                elif hasattr(self._valid_ros_type, '__dict__'):  # generic python object (for tests)
+                    rtkeys = [k for k in vars(self._valid_ros_type).keys() if not k.startswith('_')]
+                else:  # this is a basic python type (including dict)
+                    rtkeys = ['data']  # this is intended to support decorating nested fields (????)
+                    # OR except ???
 
-            @marshmallow.post_load
-            def _make_ros_type(self, data):
+                # here data is always a dict
+                for dk, dv in data.iteritems():
+                    if dk not in rtkeys:
+                        raise marshmallow.ValidationError(
+                            'loaded data has unexpected field {dk}'.format(**locals()))
+                for k in rtkeys:
+                    if k not in data:
+                        raise marshmallow.ValidationError('loaded data missing field {k}'.format(**locals()))
+                        # R should we let marshallow manage (the point of required parameter)
+
+            @marshmallow.pre_load
+            def _from_ros_type_to_dict(self, data):
+                if hasattr(data, '__slots__'):  # ROS style
+                    slots = []
+                    ancestors = inspect.getmro(type(data))
+                    for a in ancestors:
+                        slots += set(a.__slots__) if hasattr(a, '__slots__') else set()
+                    # Remove special ROS slots
+                    if '_connection_header' in slots:
+                        slots.remove('_connection_header')
+                    data_dict = {
+                        slot: getattr(data, slot)
+                        for slot in slots
+                        }
+                    return data_dict
+                elif hasattr(data, '__dict__'):  # generic python object (for tests)
+                    return vars(data)
+                else:  # this is a basic python type (including dict)
+                    return data
+
+            @marshmallow.post_dump
+            def _build_ros_type(self, data):
                 data = self._generated_ros_type(**data)
                 return data
 

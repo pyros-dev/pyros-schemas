@@ -71,10 +71,22 @@ class RosBool(marshmallow.fields.Boolean):
         kwargs.setdefault('required', True)   # setting required to true by default
         super(RosBool, self).__init__(*args, **kwargs)
 
+    # def _serialize(self, value, attr, obj):
+    #     if value is None:
+    #         return None
+    #     return ensure_binary_type(value)
+    #
+    # def _deserialize(self, value, attr, data):
+    #     if not isinstance(value, marshmallow.compat.basestring):
+    #         self.fail('invalid')
+    #     return ensure_binary_type(value)
+
+
 
 # Since the rospy message type member field is already a python int,
 # we do not need anything special here, we rely on marshmallow python type validation.
 # Yet we are specifying each on in case we want to extend it later...
+
 
 class RosInt8(marshmallow.fields.Integer):
     def __init__(self, *args, **kwargs):
@@ -135,10 +147,6 @@ class RosFloat64(marshmallow.fields.Float):
         kwargs.setdefault('required', True)   # setting required to true by default
         super(RosFloat64, self).__init__(*args, **kwargs)
 
-
-RosSchema = marshmallow.Schema
-
-
 # We need to be strict with strings, since ROS should have only str,
 # and from python we should pass only unicode (like marshmallow string field, planning forward compat here)
 # Anyway Careful with python 3 here:
@@ -150,13 +158,13 @@ def ensure_binary_type(val):
 
 
 class RosString(marshmallow.fields.Field):
-    """A ros string, serializing as ros python field type :
+    """A ros string, deserializing as ros python field type :
     Python <3.0 implies str, python >3.0 implies bytes
 
     >>> print('testdoc')
-    'testdoc'
+    testdoc
 
-    If you need unicode serialization, have a look at RosTextString.
+    If you need unicode deserialization, have a look at RosTextString.
 
     No marshmallow field class for this, so we're declaring it here.
     """
@@ -185,11 +193,11 @@ class RosString(marshmallow.fields.Field):
 # ros messages currently dont do any check and assign unicode string in str and then things break.
 # Anyway Careful with python 3 here...
 class RosTextString(RosString):
-    """A ros string, serializing into unicode.
-     Python <3.0 means unicode --deserialize--> str, python >3.0 means str --deserialize--> bytes
+    """A ros string, deserializing into unicode.
+     Python <3.0 means unicode --serialize--> str, python >3.0 means str --serialize--> bytes
 
-    For planning for python3, we serialize this as unicode string
-    For using with ROS we deserialize as str / bytes
+    For planning for python3, we deserialize this as unicode string
+    For using with ROS we serialize as str / bytes
 
     No marshmallow field class for this, so we're declaring it here.
     """
@@ -197,8 +205,10 @@ class RosTextString(RosString):
         'invalid': 'Not a valid text string.'
     }
 
+    # Note we still serialize to ros format 'str'
+
     # we got this from marshmallow.fields.String
-    def _serialize(self, value, attr, obj):
+    def _deserialize(self, value, attr, data):
         if value is None:
             return None
         return marshmallow.utils.ensure_text_type(value)
@@ -215,13 +225,13 @@ class RosNested(marshmallow.fields.Nested):
 
     def _serialize(self, value, attr, obj):
         # tv_dict = super(RosTimeVerbatim, self)._serialize(value, attr, obj)
-        # # TODO : generic conversion from dict to python type
+        # # TODO : generic conversion from dict to ROS python type
         # t = rospy.Time(**tv_dict)  # we let this explicitely except if some value is wrong here...
         # return t
         return super(RosNested, self)._serialize(value, attr, obj)
 
     def _deserialize(self, value, attr, obj):
-        # # TODO : generic conversion from python type to dict
+        # # TODO : generic conversion from ROS python type to dict
         # value_dict = {'secs': value.secs, 'nsecs': value.nsecs}
         # v = super(RosTimeVerbatim, self)._deserialize(value_dict, attr, obj)
         # return v

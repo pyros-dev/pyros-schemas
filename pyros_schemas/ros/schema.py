@@ -3,18 +3,24 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import importlib
+import inspect
 
 import six
+import sys
 
+import marshmallow
+from marshmallow.schema import BaseSchema as marshmallow_BaseSchema
+from marshmallow.schema import SchemaMeta as marshmallow_SchemaMeta
 from .exceptions import PyrosSchemasException, PyrosSchemasValidationError
-from .fields import (
+from .basic_fields import (
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
     RosFloat32, RosFloat64,
     RosString, RosTextString,
+    RosNested
 )
-from . import RosSchema, pre_load, post_load, pre_dump, post_dump
+from .decorators import pre_load, post_load, pre_dump, post_dump
 
 import roslib
 
@@ -105,6 +111,80 @@ def _get_class(typestring, subname):
     return cls
 
 
+def _get_rosmsg_members_as_dict(inst):
+    if hasattr(inst, '__slots__'):  # ROS style
+        slots = []
+        ancestors = inspect.getmro(type(inst))
+        for a in ancestors:
+            slots += set(a.__slots__) if hasattr(a, '__slots__') else set()
+        # Remove special ROS slots
+        if '_connection_header' in slots:
+            slots.remove('_connection_header')
+        data_dict = {
+            slot: getattr(inst, slot)
+            for slot in slots
+        }
+    elif hasattr(inst, '__dict__'):  # generic python object (for tests)
+        data_dict = vars(inst)
+    else:  # this is a basic python type (including dict)
+        data_dict = inst
+    return data_dict
+
+
+def _get_rosmsg_fields_as_dict(cls):
+    if hasattr(cls, '__slots__'):  # ROS style
+        slots = []
+        slots_types = []
+        ancestors = inspect.getmro(cls)
+        for a in ancestors:
+            slots += a.__slots__ if hasattr(a, '__slots__') else []
+            slots_types += a._slots_types if hasattr(a, '_slots_types') else []
+        # Remove special ROS slots
+        if '_connection_header' in slots:
+            slots.remove('_connection_header')
+        data_dict = dict(zip(slots, slots_types))
+    elif hasattr(cls, '__dict__'):  # generic python object (for tests)
+        data_dict = {k: type(v) for k, v in vars(cls).items()}
+    else:  # this is a basic python type (including dict)
+        data_dict = cls
+    return data_dict
+
+
+class RosSchema(marshmallow.Schema):
+    """Inheriting the Marshmallow schema to extend behavior introspecting into slots for ROS messages
+    Not using pre_load, post_load, pre_dump or post_dump here, to simplify things for when we need to create schemas dynamically.
+    pre_load, post_load, pre_dump, post_dump should still be used in derived Schemas, to customize the serialization
+    This class only factor serialization behavior required by ROS generated message types.
+    """
+
+    _valid_ros_msgtype = None  # fill this in your Schema class for enforcing msgtype validation on load
+    _generated_ros_msgtype = None  # fill this in your Schema class for automatically generating msgtype on dump
+
+    def __init__(self, strict=True, **kwargs):  # default to strict behavior
+        super(RosSchema, self).__init__(strict=strict, **kwargs)
+
+    def load(self, data, many=None, partial=None):
+        """Overloading load function to transform a ROS msg type into a dict for marshmallow"""
+        # early type validation if required
+        if self.strict and self._valid_ros_msgtype and not isinstance(data, self._valid_ros_msgtype):
+            raise PyrosSchemasValidationError('data type should be {0}'.format(self._valid_ros_msgtype))
+        data_dict = _get_rosmsg_members_as_dict(data)
+        ros_data_dict = {k.replace('-', '_'): v for k, v in data_dict.items()}  # because of ROS field naming conventions
+        try:
+            unmarshal_result = super(RosSchema, self).load(ros_data_dict, many=many, partial=partial)
+        except marshmallow.ValidationError:
+            raise PyrosSchemasValidationError('ERROR occured during deserialization: {errors}'.format(**locals()))
+        return unmarshal_result
+
+    def dump(self, obj, many=None, update_fields=True, **kwargs):
+        try:
+            data_obj, errors = super(RosSchema, self).dump(obj, many=many, update_fields=update_fields, **kwargs)
+        except marshmallow.ValidationError:
+            raise PyrosSchemasValidationError('ERROR occured during serialization: {errors}'.format(**locals()))
+        return marshmallow.MarshalResult(self._generated_ros_msgtype(**data_obj), errors)
+
+
+
 def create(ros_msg_class,
                 pre_load_fun=None,
                 post_load_fun=None,
@@ -124,17 +204,19 @@ def create(ros_msg_class,
     :return: A Schema that handles all (dict --load()--> ros_msg_class --dump()--> dict) serialization
     """
 
-    if isinstance(ros_msg_class, six.string_types):  # if we get a string it s a ros descritpion, not the class itself
-        # ENDING RECURSION with well known type
-        if ros_msg_class in ros_msgtype_mapping:
-            return ros_msgtype_mapping[ros_msg_class]()
-        else:
-            # getting the actual class to be able to introspect it
-            ros_msg_class = _get_msg_class(ros_msg_class)
-            # and keep going
+    if isinstance(ros_msg_class, six.string_types):  # if we get a string it s a ros description, not the class itself
+        ros_msg_class = _get_msg_class(ros_msg_class)
+        # and keep going
 
-    # RECURSE to get all nested message classes
-    members = dict(zip(ros_msg_class.__slots__, [create(t) for t in ros_msg_class._slot_types]))
+    members_types = _get_rosmsg_fields_as_dict(ros_msg_class)
+    members = {}
+    for s, stype in members_types.iteritems():
+        if ros_msg_class in ros_msgtype_mapping:
+            # ENDING RECURSION with well known type
+            members.setdefault(s, ros_msgtype_mapping[ros_msg_class]())
+        else:
+            # RECURSING in Nested fields
+            members.setdefault(s, RosNested(create(stype)))  # we need to nest the next (Ros)Schema
 
     # Adding methods for type validation
     def _verify_ros_type(schema_instance, data):
@@ -142,16 +224,11 @@ def create(ros_msg_class,
         if not isinstance(data, ros_msg_class):
             raise PyrosSchemasValidationError('data type should be {0}'.format(ros_msg_class))
 
-    def _key_mod(schema_instance, data):
-        # careful : headers key name are slightly different
-        return {k.replace('-', '_'): v for k, v in data.items()}
-
     def _make_ros_type(schema_instance, data):
         data = ros_msg_class(**data)
         return data
 
     members['_verify_ros_type'] = pre_dump(_verify_ros_type)
-    members['_key_mod'] = pre_load(_key_mod)
     members['_make_ros_type'] = post_load(_make_ros_type)
 
     # supporting extra customization of the serialization
@@ -171,6 +248,7 @@ def create(ros_msg_class,
     MsgSchema = type('MsgSchema', (RosSchema,), members)
 
     # Generating the schema instance
+    # TODO : nicer way ?
     schema_instance = MsgSchema(strict=True)
 
     return schema_instance

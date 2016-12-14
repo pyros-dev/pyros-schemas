@@ -52,6 +52,8 @@ def test_wrap_cls():
     assert WrapperCheck.__doc__ == """ test doc value """
     assert WrapperCheck.__name__ == "WrappedCheck"
 
+
+
 #
 # Testing with_explicitly_matched_type decorator
 #
@@ -76,20 +78,20 @@ def test_with_validated_generated_type():
     original_invalid = Original(answer='fortytwo')
     schema = SchemaWithValidatedGeneratedType(strict=True)  # we usually want to be strict and explicitely fail.
 
-    # Testing serialization
-    marshalled = schema.dump(original_ok)
+    # Testing deserialization
+    unmarshalled = schema.load(original_ok)
 
-    assert len(marshalled.errors) == 0
-    assert marshalled.data == {'answer': 42}
+    assert len(unmarshalled.errors) == 0
+    assert unmarshalled.data == {'answer': 42}
 
     # Verifying validation actually happens
     with nose.tools.assert_raises(marshmallow.ValidationError) as cm:
-        schema.dump(original_invalid)
+        schema.load(original_invalid)
 
-    # Testing deserialization
-    unmarshalled = schema.load(marshalled.data)
-    assert len(unmarshalled.errors) == 0
-    assert unmarshalled.data == original_ok
+    # Testing serialization
+    marshalled = schema.dump(unmarshalled.data)
+    assert len(marshalled.errors) == 0
+    assert marshalled.data == original_ok
 
 
 # Just in case we run this directly
