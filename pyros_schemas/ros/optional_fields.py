@@ -59,13 +59,13 @@ import functools
 import marshmallow
 
 from .decorators import with_explicitly_matched_type, pre_dump, pre_load, post_dump, post_load
-from .fields import RosUInt32, RosInt32, RosNested
+from .basic_fields import RosUInt32, RosInt32, RosNested, RosList
 from .schema import RosSchema
 from .exceptions import PyrosSchemasValidationError
 
 
 
-class RosOptAsList(marshmallow.fields.List):
+class RosOptAsList(RosList):
     """Any ros field, optional in serialized form. In Ros is it represented by a list of that field type, and can be empty.
 
     :param kwargs: The same keyword arguments that :class:`List` receives. required is set to True by default.

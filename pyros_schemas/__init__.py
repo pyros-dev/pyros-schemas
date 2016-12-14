@@ -22,6 +22,7 @@ from .ros import (
     RosTextString,
     RosNested,
     RosList,
+    RosOpt,
     create
 )
 
@@ -36,5 +37,6 @@ __all__ = [
     'RosOpt',
     'RosNested',
     'RosList',
+    'RosOpt',
     'create'
 ]

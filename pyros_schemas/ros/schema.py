@@ -138,7 +138,7 @@ def _get_rosmsg_fields_as_dict(cls):
         ancestors = inspect.getmro(cls)
         for a in ancestors:
             slots += a.__slots__ if hasattr(a, '__slots__') else []
-            slots_types += a._slots_types if hasattr(a, '_slots_types') else []
+            slots_types += a._slot_types if hasattr(a, '_slot_types') else []
         # Remove special ROS slots
         if '_connection_header' in slots:
             slots.remove('_connection_header')
@@ -169,20 +169,26 @@ class RosSchema(marshmallow.Schema):
         if self.strict and self._valid_ros_msgtype and not isinstance(data, self._valid_ros_msgtype):
             raise PyrosSchemasValidationError('data type should be {0}'.format(self._valid_ros_msgtype))
         data_dict = _get_rosmsg_members_as_dict(data)
-        ros_data_dict = {k.replace('-', '_'): v for k, v in data_dict.items()}  # because of ROS field naming conventions
         try:
-            unmarshal_result = super(RosSchema, self).load(ros_data_dict, many=many, partial=partial)
+            unmarshal_result = super(RosSchema, self).load(data_dict, many=many, partial=partial)
         except marshmallow.ValidationError:
             raise PyrosSchemasValidationError('ERROR occured during deserialization: {errors}'.format(**locals()))
         return unmarshal_result
 
     def dump(self, obj, many=None, update_fields=True, **kwargs):
+        """Overloading dump function to transform a dict into a ROS msg from marshmallow"""
         try:
-            data_obj, errors = super(RosSchema, self).dump(obj, many=many, update_fields=update_fields, **kwargs)
+            obj_dict = _get_rosmsg_members_as_dict(obj)  # in case we get something that is not a dict...
+            # because ROS field naming conventions are different than python dict key conventions
+            obj_rosfixed_dict = {k.replace('-', '_'): v for k, v in obj_dict.items()}
+            data_dict, errors = super(RosSchema, self).dump(obj_rosfixed_dict, many=many, update_fields=update_fields, **kwargs)
         except marshmallow.ValidationError:
             raise PyrosSchemasValidationError('ERROR occured during serialization: {errors}'.format(**locals()))
-        return marshmallow.MarshalResult(self._generated_ros_msgtype(**data_obj), errors)
-
+        if self._generated_ros_msgtype and not errors:
+            obj = self._generated_ros_msgtype(**data_dict)
+        else:
+            obj = data_dict  # we return directly
+        return marshmallow.MarshalResult(obj, errors)
 
 
 def create(ros_msg_class,
@@ -211,25 +217,12 @@ def create(ros_msg_class,
     members_types = _get_rosmsg_fields_as_dict(ros_msg_class)
     members = {}
     for s, stype in members_types.iteritems():
-        if ros_msg_class in ros_msgtype_mapping:
+        if stype in ros_msgtype_mapping:
             # ENDING RECURSION with well known type
-            members.setdefault(s, ros_msgtype_mapping[ros_msg_class]())
+            members.setdefault(s, ros_msgtype_mapping[stype]())
         else:
             # RECURSING in Nested fields
             members.setdefault(s, RosNested(create(stype)))  # we need to nest the next (Ros)Schema
-
-    # Adding methods for type validation
-    def _verify_ros_type(schema_instance, data):
-        # introspect data
-        if not isinstance(data, ros_msg_class):
-            raise PyrosSchemasValidationError('data type should be {0}'.format(ros_msg_class))
-
-    def _make_ros_type(schema_instance, data):
-        data = ros_msg_class(**data)
-        return data
-
-    members['_verify_ros_type'] = pre_dump(_verify_ros_type)
-    members['_make_ros_type'] = post_load(_make_ros_type)
 
     # supporting extra customization of the serialization
     if pre_load_fun:
@@ -245,11 +238,14 @@ def create(ros_msg_class,
     for k, v in kwargs:
         members[k] = v
 
-    MsgSchema = type('MsgSchema', (RosSchema,), members)
+    members['_valid_ros_msgtype'] = ros_msg_class
+    members['_generated_ros_msgtype'] = ros_msg_class
+
+    MsgSchema = type(ros_msg_class.__name__ + 'Schema', (RosSchema,), members)
 
     # Generating the schema instance
     # TODO : nicer way ?
-    schema_instance = MsgSchema(strict=True)
+    schema_instance = MsgSchema()
 
     return schema_instance
 

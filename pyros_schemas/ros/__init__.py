@@ -20,6 +20,10 @@ from .time_fields import (
     RosDuration, RosDurationVerbatim,
 )
 
+from .optional_fields import (
+    RosOptAsList, RosOptAsNested, RosOpt
+)
+
 from .schemas import (
     RosMsgBool,
     RosMsgInt8, RosMsgInt16, RosMsgInt32, RosMsgInt64,
