@@ -235,6 +235,11 @@ class RosNested(marshmallow.fields.Nested):
         # value_dict = {'secs': value.secs, 'nsecs': value.nsecs}
         # v = super(RosTimeVerbatim, self)._deserialize(value_dict, attr, obj)
         # return v
+
+        # MEMO : value : HttpRequestHeaders (ROS style)
+        # MEMO : attr : 'headers' (string)
+        # MEMO : obj : {'headers': <value>}
+
         return super(RosNested, self)._deserialize(value, attr, obj)
 
 
@@ -243,4 +248,3 @@ class RosList(marshmallow.fields.List):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('required', True)   # setting required to true by default
         super(RosList, self).__init__(*args, **kwargs)
-
