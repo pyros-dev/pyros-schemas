@@ -7,9 +7,9 @@ Defining marshmallow schemas for ROS message fields
 Ref : http://wiki.ros.org/msg
 
 These Fields and Schema are meant to be used together with ROS message type serialization :
-ROSTCP --deserialize in rospy--> std_msgs.msg.* --serialize (dump) in pyros_schemas--> dict
+ROSTCP --deserialize in rospy--> std_msgs.msg.* --deserialize (load) in pyros_schemas--> dict
 And reversely :
-dict --deserialize (load) in pyros_schemas--> std_msgs.msg.* --serialize in rospy--> ROSTCP
+dict --serialize (dump) in pyros_schemas--> std_msgs.msg.* --serialize in rospy--> ROSTCP
 
 This helps pyros deal with data only as dicts without worrying about the underlying ROS implementation.
 """
@@ -56,17 +56,15 @@ except ImportError:
 # From here we can pick this up from ROS if missing in python env.
 import inspect
 import functools
-import marshmallow
+import marshmallow.utils
 
 from .decorators import with_explicitly_matched_type, pre_dump, pre_load, post_dump, post_load
 from .basic_fields import RosUInt32, RosInt32, RosNested, RosList
-from .schema import RosSchema
 from .exceptions import PyrosSchemasValidationError
 
 
-
 class RosOptAsList(RosList):
-    """Any ros field, optional in serialized form. In Ros is it represented by a list of that field type, and can be empty.
+    """Any ros field, optional in deserialized (python dict) form. In Ros is it represented by a list of that field type, and can be empty.
 
     :param kwargs: The same keyword arguments that :class:`List` receives. required is set to True by default.
     """
@@ -74,31 +72,35 @@ class RosOptAsList(RosList):
         super(RosOptAsList, self).__init__(cls_or_instance, **kwargs)
 
     def _serialize(self, value, attr, obj):
-        new_value = super(RosOptAsList, self)._serialize(value, attr, obj)
-        if len(new_value) == 0:
-            return marshmallow.missing  # if we have no element in value list this field is missing.
-        else:
-            return new_value[0]  # we only return the first element, this represent an optional serialized field.
+        if value is None:  # None here means we actually dont have this optional field
+            value = []
+        dumped = super(RosOptAsList, self)._serialize(value, attr, obj)
+        return dumped  #  we always want a list for serialized (ROS format) field
 
     def _deserialize(self, value, attr, data):
-        # value should not be a list : serialized for has one field (optional)
+        # value should always be a list here (since serialized format has to have a field)
         # It seems there is no need to modify data here...
-        return super(RosOptAsList, self)._deserialize([value], attr, data)
+        loaded = super(RosOptAsList, self)._deserialize(value, attr, data)
+        if len(loaded) == 0:
+            return marshmallow.utils.missing  # if we have no element in value list this field is missing.
+        else:
+            return loaded[0]
 
 
 # TODO : fix this as possible way to implement optional field in ROS ( clearer for rOS dev than array )
-class RosOptAsNested(marshmallow.fields.Nested):
-    """Any ros field, optional in serialized form. In Ros is it represented by a nested message that adds a boolean.
+class RosOptAsNested(RosNested):
+    """Any ros field, optional in deserialized (python dict) form. In Ros is it represented by a nested message that adds a boolean.
 
     :param kwargs: The same keyword arguments that :class:`List` receives. required is set to True by default.
     """
     def __init__(self, cls_or_instance, **kwargs):
         super(RosOptAsNested, self).__init__(cls_or_instance, **kwargs)
 
+    # TODO : Inverse Serialize / DEserialize
     def _serialize(self, value, attr, obj):
         new_value = super(RosOptAsNested, self)._serialize(value, attr, obj)
         if len(new_value) == 0:
-            return marshmallow.missing  # if we have no element in value list this field is missing.
+            return marshmallow.utils.missing  # if we have no element in value list this field is missing.
         else:
             return new_value[0]  # we only return the first element, this represent an optional serialized field.
 

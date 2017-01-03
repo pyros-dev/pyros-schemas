@@ -108,7 +108,7 @@ def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
 
         @wraps_cls(cls)
         class Wrapper(cls):
-            # TODO : closure (IN PROGRESS check helpers.py module)
+            # TODO : closure (IN PROGRESS check schema.py module)
             # TODO : proxy ?
             # This wrapper inherits. Maybe a proxy would be better ?
             # We cannot have a doc here, because it is not writeable in python 2.7

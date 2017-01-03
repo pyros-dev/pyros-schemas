@@ -12,7 +12,7 @@ except ImportError:
 
 import nose
 
-from pyros_schemas.ros.helpers import create, ros_msgtype_mapping
+from pyros_schemas.ros.schema import create, ros_msgtype_mapping
 
 # TODO Property based testing
 # import hypothesis
@@ -21,19 +21,19 @@ from pyros_schemas.ros.helpers import create, ros_msgtype_mapping
 @nose.tools.nottest
 def gen_rosmsg_test(schema, ros_msg, py_inst_expected):
 
-    marshalled, errors = schema.dump(ros_msg)
+    marshalled, errors = schema.load(ros_msg)
     assert not errors and marshalled == py_inst_expected
 
-    value, errors = schema.load(marshalled)
+    value, errors = schema.dump(marshalled)
     assert not errors and type(value) == type(ros_msg) and value == ros_msg
 
 @nose.tools.nottest
 def gen_pymsg_test(schema, ros_msg_expected, py_inst):
 
-    unmarshalled, errors = schema.load(py_inst)
+    unmarshalled, errors = schema.dump(py_inst)
     assert not errors and type(unmarshalled) == type(ros_msg_expected) and unmarshalled == ros_msg_expected
 
-    obj, errors = schema.dump(unmarshalled)
+    obj, errors = schema.load(unmarshalled)
     assert not errors and type(obj) == type(py_inst) and obj == py_inst
 
 def test_msgbool_ros():

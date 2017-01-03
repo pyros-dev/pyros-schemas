@@ -82,7 +82,7 @@ def test_with_validated_generated_type():
     unmarshalled = schema.load(original_ok)
 
     assert len(unmarshalled.errors) == 0
-    assert unmarshalled.data == {'answer': 42}
+    assert unmarshalled.data == {'answer': 42}, "unmarshalled.data is {unmarshalled.data}".format(**locals())
 
     # Verifying validation actually happens
     with nose.tools.assert_raises(marshmallow.ValidationError) as cm:

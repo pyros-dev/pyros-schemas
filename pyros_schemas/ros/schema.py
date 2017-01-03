@@ -19,7 +19,11 @@ from .basic_fields import (
     RosFloat32, RosFloat64,
     RosString, RosTextString,
     RosNested,
-    RosList)
+    RosList,
+)
+from .optional_fields import (
+    RosOpt,
+)
 from .decorators import pre_load, post_load, pre_dump, post_dump
 
 import roslib
@@ -77,12 +81,14 @@ def _splittype(typestring):
     raise InvalidTypeStringException(typestring)
 
 
+# TODO  : check genpy.Message for get_message_class and get_service_class
 def _get_msg_class(typestring):
     """ If not loaded, loads the specified msg class then returns an instance
     of it
     Throws various exceptions if loading the msg class fails
     """
     return _get_class(typestring, "msg")
+    # return genpy.get_message_class(typestring, reload_on_error=True)
 
 
 def _get_srv_class(typestring):
@@ -208,7 +214,7 @@ class RosSchema(marshmallow.Schema):
         try:
             obj_dict = _get_rosmsg_members_as_dict(obj)  # in case we get something that is not a dict...
             # because ROS field naming conventions are different than python dict key conventions
-            obj_rosfixed_dict = {k.replace('-', '_'): v for k, v in obj_dict.items()}
+            obj_rosfixed_dict = {k.replace('-', '_'): v for k, v in obj_dict.items()}  # TODO : come up with a generic <ROS_field encode> function
             data_dict, errors = super(RosSchema, self).dump(obj_rosfixed_dict, many=many, update_fields=update_fields, **kwargs)
         except marshmallow.ValidationError as ve:
             raise PyrosSchemasValidationError('ERROR occurred during serialization: {ve}'.format(**locals()))
@@ -246,21 +252,32 @@ def create(ros_msg_class,
     members_types = _get_rosmsg_fields_as_dict(ros_msg_class)
     members = {}
     for s, stype in members_types.iteritems():
+        # Note here we rely entirely on _opt_slots from the class to be set properly
+        # for both Nested or List representation of optional fields
         ros_schema_inst = None
         if stype.endswith("[]"):
             if stype[:-2] in ros_msgtype_mapping:
                 # ENDING RECURSION with well known array type
-                ros_schema_inst = RosList(ros_msgtype_mapping[stype[:-2]]())
+                if hasattr(ros_msg_class, '_opt_slots') and s in ros_msg_class._opt_slots:
+                    ros_schema_inst = RosOpt(ros_msgtype_mapping[stype[:-2]]())
+                else:
+                    ros_schema_inst = RosList(ros_msgtype_mapping[stype[:-2]]())
             else:
                 # RECURSING in Nested fields
-                ros_schema_inst = RosList(RosNested(create(stype[:-2])))  # we need to nest the next (Ros)Schema
+                if hasattr(ros_msg_class, '_opt_slots') and s in ros_msg_class._opt_slots:
+                    ros_schema_inst = RosOpt(RosNested(create(stype[:-2])))  # we need to nest the next (Ros)Schema
+                else:
+                    ros_schema_inst = RosList(RosNested(create(stype[:-2])))  # we need to nest the next (Ros)Schema
         else:
             if stype in ros_msgtype_mapping:
                 # ENDING RECURSION with well known basic type
-                ros_schema_inst = ros_msgtype_mapping[stype]()
+                ros_schema_inst = ros_msgtype_mapping[stype]()  # TODO : shouldn't we check for opt slots here ?
             else:
                 # RECURSING in Nested fields
-                ros_schema_inst = RosNested(create(stype))  # we need to nest the next (Ros)Schema
+                if hasattr(ros_msg_class, '_opt_slots') and s in ros_msg_class._opt_slots:
+                    ros_schema_inst = RosOpt(create(stype))
+                else:
+                    ros_schema_inst = RosNested(create(stype))  # we need to nest the next (Ros)Schema
 
         members.setdefault(s, ros_schema_inst)
 
