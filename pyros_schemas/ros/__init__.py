@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from .decorators import wraps_cls  # useful for direct import even if not included in __all__
-from .decorators import with_explicitly_matched_type
+from .decorators import with_service_schemas  # useful for direct import even if not included in __all__
 
 from .basic_fields import (
     RosBool,

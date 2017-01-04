@@ -58,8 +58,6 @@ except ImportError:
 import functools
 import marshmallow
 
-from .decorators import with_explicitly_matched_type
-
 # Keeping field declaration separate in case we want to extend it later.
 # ROS doesnt allow missing field -> everything is required.
 

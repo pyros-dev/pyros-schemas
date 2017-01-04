@@ -13,7 +13,6 @@ from __future__ import print_function
 #     import pyros_msgs
 
 from .ros import (
-    with_explicitly_matched_type,
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
@@ -23,12 +22,11 @@ from .ros import (
     RosNested,
     RosList,
     RosOpt,
-    create
+    create,
+    with_service_schemas,
 )
 
 __all__ = [
-    'with_explicitly_matched_type',
-
     'RosBool',
     'RosInt8', 'RosInt16', 'RosInt32', 'RosInt64',
     'RosUInt8', 'RosUInt16', 'RosUInt32', 'RosUInt64',
@@ -38,5 +36,6 @@ __all__ = [
     'RosNested',
     'RosList',
     'RosOpt',
-    'create'
+    'create',
+    'with_service_schemas'
 ]
