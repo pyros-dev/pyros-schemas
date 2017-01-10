@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from .decorators import with_service_schemas  # useful for direct import even if not included in __all__
 
 from .basic_fields import (
     RosBool,
@@ -12,11 +11,6 @@ from .basic_fields import (
     RosTextString,
     RosNested,
     RosList,
-)
-
-from .time_fields import (
-    RosTime, RosTimeVerbatim,
-    RosDuration, RosDurationVerbatim,
 )
 
 from .optional_fields import (
@@ -31,5 +25,11 @@ from .schemas import (
     RosMsgString,
 )
 
-from .schema import create
+from .time_fields import (
+    RosTime, RosTimeVerbatim,
+    RosDuration, RosDurationVerbatim,
+)
 
+from .schemagic import create
+
+from .decorators import with_service_schemas  # useful for direct import even if not included in __all__

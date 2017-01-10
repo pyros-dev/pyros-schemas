@@ -175,16 +175,10 @@ def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
     return schema_explicitly_matched_type_decorator
 
 
-# Statically proxying marshmallow useful decorators for methods
-pre_load = marshmallow.pre_load
-post_load = marshmallow.post_load
-pre_dump = marshmallow.pre_dump
-post_dump = marshmallow.post_dump
-
 
 
 from .exceptions import PyrosSchemasServiceRequestException, PyrosSchemasServiceResponseException
-from .schema import create
+from .schemagic import create
 
 from functools import wraps
 
@@ -195,17 +189,19 @@ from functools import wraps
 def with_service_schemas(service_class):
     def with_service_schemas_decorator(func):
         @wraps(func)
-        def func_wrapper(data):  # we need to expose only one argument for ROS
+        # TODO : handle funcitons AND methods ?
+        def func_wrapper(*data):  # we need to expose only one argument for ROS or two for methods
 
             try:
                 request_schema = create(service_class._request_class)
-                data_dict, errors = request_schema.load(data)
+                data_dict, errors = request_schema.load(data[-1])  # we assume the last argument always contains the ROS data
             except Exception as e:
                 raise PyrosSchemasServiceRequestException(e)
 
             # we should call the function with original and parsed argument,
             # including potential errors, just in case, at least temporarily...
-            response = func(data, data_dict, errors)
+            data_extended = data + (data_dict, errors)
+            response = func(*data_extended)
             #  we also let the function trigger its own exceptions
 
             try:
