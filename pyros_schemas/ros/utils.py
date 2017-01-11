@@ -2,7 +2,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import inspect
-
+import importlib
+import roslib
 from .exceptions import InvalidClassException, InvalidModuleException, InvalidPackageException, InvalidTypeStringException
 
 
