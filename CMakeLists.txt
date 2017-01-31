@@ -36,7 +36,7 @@ catkin_package()
 #######
 
 if (CATKIN_ENABLE_TESTING)
-  catkin_add_nosetests(pyros_schemas/tests)
+  catkin_add_nosetests(pyros_schemas/ros/tests)
 endif()
 
 
