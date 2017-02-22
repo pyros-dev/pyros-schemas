@@ -1,6 +1,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import sys
+
+# for py2 / py3 compatibility
+import six
+six_long = six.integer_types[-1]
+
+
 from .basic_fields import (
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
@@ -27,4 +34,19 @@ ros_msgtype_mapping = {
     # TODO : returning datetime as ISO string ?
     # 'duration': RosDuration,
     'duration': RosDurationVerbatim,
+}
+
+
+# This is for explicit matching types.
+
+# Ref : http://wiki.ros.org/msg
+# TODO : arrays ?
+ros_pythontype_mapping = {
+    'bool': bool,
+    'int8': int, 'int16': int, 'int32': int, 'int64': six_long,
+    'uint8': int, 'uint16': int, 'uint32': int, 'uint64': six_long,
+    'float32': float, 'float64': float,
+    'string': str,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
+    #'string': RosTextString,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
+    # Time ???
 }

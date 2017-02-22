@@ -64,14 +64,14 @@ class _RosTimeSchema(RosSchema):
     """
 
     _valid_ros_msgtype = genpy.Time
-    _generated_ros_msgtype = rospy.Time
+    _generated_ros_msgtype = genpy.Time
 
     secs = RosUInt32()
     nsecs = RosUInt32()
 
 
 class RosTimeVerbatim(RosNested):
-    """A ros time, serialized into a rospy.Time()"""
+    """A ros time, serialized into a genpy.Time()"""
     def __init__(self, *args, **kwargs):
         kwargs['nested'] = _RosTimeSchema  # forcing nested to be our schema
         super(RosTimeVerbatim, self).__init__(*args, **kwargs)
@@ -107,21 +107,21 @@ class _RosDurationSchema(RosSchema):
     """
 
     _valid_ros_msgtype = genpy.Duration
-    _generated_ros_msgtype = rospy.Duration
+    _generated_ros_msgtype = genpy.Duration  # we also generate a genpy since it is compatible with rospy, and has the correct list of slots
 
     secs = RosInt32()
     nsecs = RosInt32()
 
 
 class RosDurationVerbatim(RosNested):
-    """A ros time, serialized into a rospy.Duration()"""
+    """A ros time, serialized into a genpy.Duration()"""
     def __init__(self, *args, **kwargs):
         kwargs['nested'] = _RosDurationSchema  # forcing nested to be our schema
         super(RosDurationVerbatim, self).__init__(*args, **kwargs)
 
 
 class RosDuration(RosDurationVerbatim):
-    """A ros duration, serialized into a rospy.Duration()."""
+    """A ros duration, serialized into a genpy.Duration()."""
     default_error_messages = {
         'invalid': 'Not a valid duration.'
     }

@@ -33,3 +33,5 @@ from .time_fields import (
 from .schemagic import create
 
 from .decorators import with_service_schemas  # useful for direct import even if not included in __all__
+
+from .types_mapping import ros_msgtype_mapping, ros_pythontype_mapping
