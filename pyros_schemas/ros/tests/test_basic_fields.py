@@ -267,12 +267,12 @@ def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, o
     (u'', RosTextString, std_msgs.msg.String, str, unicode),
     # TimeVerbatim
     (dict(secs=42, nsecs=31), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict),
-    pytest.mark.xfail((dict(secs=-23, nsecs=31), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict), strict=True, raises=TypeError, reason="ROS checks that times values are positive"),
+    pytest.mark.xfail(strict=True, raises=TypeError, reason="ROS checks that times values are positive")((dict(secs=-23, nsecs=31), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict)),
     (dict(secs=0, nsecs=0), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict),
     (dict(), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict),
     # Time
     (42.00000031, RosTime, std_msgs.msg.Time, genpy.Time, float),
-    pytest.mark.xfail((-23.00000031, RosTime, std_msgs.msg.Time, genpy.Time, float), strict=True, raises=TypeError, reason="ROS checks that times values are positive"),
+    pytest.mark.xfail(strict=True, raises=TypeError, reason="ROS checks that times values are positive")((-23.00000031, RosTime, std_msgs.msg.Time, genpy.Time, float)),
     (0.0, RosTime, std_msgs.msg.Time, genpy.Time, float),
     # Duration Verbatim
     (dict(secs=42, nsecs=31), RosDurationVerbatim, std_msgs.msg.Duration, genpy.Duration, dict),
