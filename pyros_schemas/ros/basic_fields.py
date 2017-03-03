@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import six
 
 """
 Defining marshmallow fields for ROS message fields
@@ -122,13 +123,29 @@ class RosUInt32(marshmallow.fields.Integer):
         super(RosUInt32, self).__init__(*args, **kwargs)
 
 
-class RosInt64(marshmallow.fields.Integer):
+# We need to introduce some python 2 / 3 compatibiilty for long
+six_long = six.integer_types[-1]
+
+
+class RosInt64(marshmallow.fields.Number):
+    # Inspired from Marshmallow Integer field implementation
+    num_type = six_long
+    default_error_messages = {
+        'invalid': 'Not a valid long integer.'
+    }
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('required', True)   # setting required to true by default
         super(RosInt64, self).__init__(*args, **kwargs)
 
 
 class RosUInt64(marshmallow.fields.Integer):
+    # Inspired from Marshmallow Integer field implementation
+    num_type = six_long
+    default_error_messages = {
+        'invalid': 'Not a valid long integer.'
+    }
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('required', True)  # setting required to true by default
         super(RosUInt64, self).__init__(*args, **kwargs)
