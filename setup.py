@@ -15,6 +15,9 @@ from catkin_pkg.python_setup import generate_distutils_setup
 setup_args = generate_distutils_setup(
     packages=[
         'pyros_schemas',
+        'pyros_schemas.ros',
+        'pyros_schemas.ros.schemas',
+        'pyros_schemas.ros.tests',
     ],
     package_dir={
         'pyros_schemas': 'pyros_schemas'
