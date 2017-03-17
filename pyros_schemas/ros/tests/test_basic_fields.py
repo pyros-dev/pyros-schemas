@@ -1,5 +1,4 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -7,13 +6,11 @@ import pytest
 import six
 six_long = six.integer_types[-1]
 
-# since we do fancy stuff to check for types
-from types import NoneType
-
 
 try:
     import std_msgs
     import genpy
+    import pyros_msgs.msg
 except ImportError:
     # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
     import pyros_setup
@@ -21,15 +18,19 @@ except ImportError:
     pyros_setup.configurable_import().configure().activate()
     import std_msgs
     import genpy
+    import pyros_msgs.msg
 
+
+import marshmallow
 
 # absolute import ros field types
-from pyros_schemas.ros.basic_fields import (
+from pyros_schemas.ros import (
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
     RosFloat32, RosFloat64,
     RosString, RosTextString,
+    RosList,
 )
 
 from pyros_schemas.ros.time_fields import (
@@ -42,9 +43,8 @@ from pyros_schemas.ros.types_mapping import (
     ros_pythontype_mapping
 )
 
-#
-# Test functions, called via test generator
-#
+
+
 @pytest.mark.parametrize("msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, out_rosfield_pytype", [
     # Bool
     (std_msgs.msg.Bool(data=True), RosBool, bool, bool, bool),
@@ -157,6 +157,19 @@ from pyros_schemas.ros.types_mapping import (
     (std_msgs.msg.Duration(genpy.Duration(secs=0, nsecs=0)), RosDuration, genpy.Duration, float, genpy.Duration),
     (std_msgs.msg.Duration(genpy.Duration()), RosDuration, genpy.Duration, float, genpy.Duration),
 
+    # To test arrays with simple messages (none in std_msgs)
+    # not we do not play with optional patching here, we are just treating that message
+    # as a message containing a simple array field.
+    (pyros_msgs.msg.test_opt_bool_as_array(data=[True, False]), lambda: RosList(RosBool()), list, list, list),
+    # This is not supported and will fail
+    # (pyros_msgs.msg.test_opt_bool_as_array(data=False), lambda: RosList(RosBool()), list, list, list),
+    (pyros_msgs.msg.test_opt_bool_as_array(data=[False]), lambda: RosList(RosBool()), list, list, list),
+    (pyros_msgs.msg.test_opt_bool_as_array(data=[]), lambda: RosList(RosBool()), list, list, list),
+    pytest.mark.xfail(strict=True, raises=marshmallow.ValidationError, reason="None is not accepted as value inside a list field")((pyros_msgs.msg.test_opt_bool_as_array(data=[None]), lambda: RosList(RosBool()), list, list, list)),
+    (pyros_msgs.msg.test_opt_bool_as_array(data=None), lambda: RosList(RosBool()), list, list, list),
+    (pyros_msgs.msg.test_opt_bool_as_array(), lambda: RosList(RosBool()), list, list, list),
+
+
 ])
 def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, out_rosfield_pytype):
     """
@@ -184,9 +197,14 @@ def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, o
     # check the deserialized value is the same as the value of that field in the original message
     # We need the type conversion to deal with deserialized object in different format than ros data (like string)
     # we also need to deal with slots in case we have complex objects (only one level supported)
-    if dictfield_pytype in [bool, int, six_long, float, six.binary_type, six.text_type]:
+    if dictfield_pytype in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
         if in_rosfield_pytype == genpy.rostime.Time or in_rosfield_pytype == genpy.rostime.Duration:  # non verbatim basic fields
+            # TODO : find a way to get rid of this special case...
             assert deserialized == dictfield_pytype(msg.data.to_sec())
+        elif in_rosfield_pytype == out_rosfield_pytype == list:  # TODO : improve this check
+            # TODO : find a way to get rid of this special case...
+            for idx, elem in enumerate(msg.data):
+                deserialized[idx] == elem
         else:
             assert deserialized == dictfield_pytype(msg.data)
     else:  # not a basic type for python (slots should be there though...)
@@ -197,6 +215,9 @@ def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, o
     # Check the field value we obtain is the expected ros type and same value.
     assert isinstance(serialized, out_rosfield_pytype)
     assert serialized == msg.data
+
+# TODO : this is actually a property test. we should use hypothesis for this.
+
 
 
 @pytest.mark.parametrize("pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfield_pytype", [
@@ -284,6 +305,14 @@ def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, o
     (-23.00000031, RosDuration, std_msgs.msg.Duration, genpy.Duration, float),
     (0.0, RosDuration, std_msgs.msg.Duration, genpy.Duration, float),
 
+    # To test arrays with simple messages (none in std_msgs)
+    # not we do not play with optional patching here, we are just treating that message
+    # as a message containing a simple array field.
+    ([True, False], lambda: RosList(RosBool()), pyros_msgs.msg.test_opt_bool_as_array, list, list),
+    ([False], lambda: RosList(RosBool()), pyros_msgs.msg.test_opt_bool_as_array, list, list),
+    ([], lambda: RosList(RosBool()), pyros_msgs.msg.test_opt_bool_as_array, list, list),
+    pytest.mark.xfail(strict=True, raises=marshmallow.ValidationError, reason="None is not accepted as value inside a list field")(([None], lambda: RosList(RosBool()), pyros_msgs.msg.test_opt_bool_as_array, list, list)),
+
 ])
 def test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfield_pytype):
 
@@ -302,6 +331,9 @@ def test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfiel
     else:  # not a basic type for python
         if pyfield_pytype in [int, six_long, float]:  # non verbatim basic fields
             assert serialized == rosfield_pytype(secs=int(pyfield), nsecs=int(pyfield * 1e9 - int(pyfield) *1e9))
+        elif pyfield_pytype == list:
+            for idx, elem in enumerate(pyfield):
+                assert serialized[idx] == elem
         else:  #dict format can be used though...
             assert serialized == rosfield_pytype(**pyfield)
 
@@ -311,7 +343,7 @@ def test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfiel
 
     # Check the dict we obtain is the expected type and same value.
     assert isinstance(deserialized, pyfield_pytype)
-    if pyfield_pytype not in [bool, int, six_long, float, six.binary_type, six.text_type]:
+    if pyfield_pytype not in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
         # If we were missing some fields, we need to initialise to default ROS value to be able to compare
         for i, s in enumerate(ros_msg.data.__slots__):
             if s not in pyfield.keys():
@@ -319,11 +351,6 @@ def test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfiel
 
     assert deserialized == pyfield
 
-
-# # Since the rospy message type member field is already a python int,
-# # we do not need anything special here, we rely on marshmallow python type validation.
-# # Yet we are specifying each on in case we want to extend it later...
-#
 
 # Just in case we run this directly
 if __name__ == '__main__':

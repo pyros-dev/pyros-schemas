@@ -9,6 +9,8 @@ from .basic_fields import (
     RosFloat32, RosFloat64,
     RosString,
     RosTextString,
+    RosTime,
+    RosDuration,
     RosNested,
     RosList,
 )
@@ -25,10 +27,10 @@ from .schemas import (
     RosMsgString,
 )
 
-from .time_fields import (
-    RosTime, RosTimeVerbatim,
-    RosDuration, RosDurationVerbatim,
-)
+# from .time_fields import (
+#     # RosTime,
+#     RosDuration,
+# )
 
 from .schemagic import create
 

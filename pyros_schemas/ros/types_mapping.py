@@ -14,12 +14,14 @@ from .basic_fields import (
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
     RosFloat32, RosFloat64,
     RosString,
+    RosTime,
+    RosDuration,
 )
 
-from .time_fields import (
-    RosTime, RosTimeVerbatim,
-    RosDuration, RosDurationVerbatim,
-)
+# from .time_fields import (
+#     # RosTimeVerbatim,
+#     RosDurationVerbatim,
+# )
 
 ros_msgtype_mapping = {
     'bool': RosBool,
@@ -29,11 +31,11 @@ ros_msgtype_mapping = {
     # Note: both of these work for service response (check with ip callback)
     'string': RosString,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
     #'string': RosTextString,  # CAREFUL between ROS who wants byte string, and python3 where everything is unicode...
-    # 'time': RosTime,
-    'time': RosTimeVerbatim,
+    'time': RosTime,
+    #'time': RosTimeVerbatim,
     # TODO : returning datetime as ISO string ?
-    # 'duration': RosDuration,
-    'duration': RosDurationVerbatim,
+    'duration': RosDuration,
+    #'duration': RosDurationVerbatim,
 }
 
 

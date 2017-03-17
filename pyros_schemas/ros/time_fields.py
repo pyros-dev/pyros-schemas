@@ -40,6 +40,9 @@ if __package__ is None and not __name__.startswith('pyros_schemas.ros.'):
     import pyros_schemas.ros
 
 
+import six
+six_long = six.integer_types[-1]
+
 try:
     # To be able to run doctest directly we avoid relative import
     import genpy
@@ -57,84 +60,90 @@ from .basic_fields import RosUInt32, RosInt32, RosNested
 from .schema import RosSchema
 
 
-class _RosTimeSchema(RosSchema):
-    """A ros time schema.
-    -  rospy.Time -> load() -> dict
-    -  dict -> dump() -> rospy.Time
-    """
-
-    _valid_ros_msgtype = genpy.Time
-    _generated_ros_msgtype = genpy.Time
-
-    secs = RosUInt32()
-    nsecs = RosUInt32()
-
-
-class RosTimeVerbatim(RosNested):
-    """A ros time, serialized into a genpy.Time()"""
-    def __init__(self, *args, **kwargs):
-        kwargs['nested'] = _RosTimeSchema  # forcing nested to be our schema
-        super(RosTimeVerbatim, self).__init__(*args, **kwargs)
-
-
-class RosTime(RosTimeVerbatim):
-    """
-    A ros time, serialized into a float, like time.time().
-    CAREFUL : this is subject to float precision issues...
-    """
-    default_error_messages = {
-        'invalid': 'Not a valid time.'
-    }
-
-    def _serialize(self, value, attr, obj):
-        # this is from https://github.com/ros/genpy/blob/kinetic-devel/src/genpy/rostime.py#L79
-        # improved to avoid precision on small float issue
-        secs = int(value)
-        nsecs = int((value * 1e9 - secs *1e9))
-        v = super(RosTime, self)._serialize({'secs': secs, 'nsecs': nsecs}, attr, obj)
-        return v
-
-    def _deserialize(self, value, attr, obj):
-        v = super(RosTime, self)._deserialize(value, attr, obj)
-        # this is from https://github.com/ros/genpy/blob/kinetic-devel/src/genpy/rostime.py#L115
-        return float(v.get('secs')) + float(v.get('nsecs')) / 1e9
-
-
-class _RosDurationSchema(RosSchema):
-    """A ros duration schema.
-    -  rospy.Duration -> load() -> dict
-    -  dict -> dump() -> rospy.Duration
-    """
-
-    _valid_ros_msgtype = genpy.Duration
-    _generated_ros_msgtype = genpy.Duration  # we also generate a genpy since it is compatible with rospy, and has the correct list of slots
-
-    secs = RosInt32()
-    nsecs = RosInt32()
+# class _RosTimeSchema(RosSchema):
+#     """A ros time schema.
+#     -  rospy.Time -> load() -> dict
+#     -  dict -> dump() -> rospy.Time
+#     """
+#
+#     _valid_ros_msgtype = genpy.Time
+#     _generated_ros_msgtype = genpy.Time
+#
+#     secs = RosUInt32()
+#     nsecs = RosUInt32()  # TODO : maybe we should have only the nsecs as UInt64 since that is the meaning we want here for serialization/deserialization...
+#
+#
+# class RosTimeVerbatim(RosNested):
+#     """A ros time, serialized into a genpy.Time()"""
+#     def __init__(self, *args, **kwargs):
+#         kwargs['nested'] = _RosTimeSchema  # forcing nested to be our schema
+#         super(RosTimeVerbatim, self).__init__(*args, **kwargs)
+#
+#
+# class RosTime(RosTimeVerbatim):
+#     """
+#     A ros time, serialized into a long int.
+#     We avoid float precision issues (since we want exact equality between serialized and deserialized values).
+#     Since 4294967295 < 9223372036854775807 / 1e9, our representation of the time with a long nsec value is valid
+#     """
+#
+#     _generated_ros_msgtype = genpy.Time
+#
+#     default_error_messages = {
+#         'invalid': 'Not a valid time.'
+#     }
+#
+#     def _serialize(self, value, attr, obj):
+#         # we need to be careful here, we cannot use the fields directly,
+#         # and we need to use the proper method to have the desired meaningful data
+#         v = super(RosTime, self)._serialize({'nsecs': value}, attr, obj)
+#         return v
+#
+#     def _deserialize(self, value, attr, obj):
+#         v = super(RosTime, self)._deserialize(value.to_nsec(), attr, obj)
+#         # we need to be careful here, we cannot use the fields directly,
+#         # and we need to use the proper method to have the desired meaningful data
+#         return v
 
 
-class RosDurationVerbatim(RosNested):
-    """A ros time, serialized into a genpy.Duration()"""
-    def __init__(self, *args, **kwargs):
-        kwargs['nested'] = _RosDurationSchema  # forcing nested to be our schema
-        super(RosDurationVerbatim, self).__init__(*args, **kwargs)
-
-
-class RosDuration(RosDurationVerbatim):
-    """A ros duration, serialized into a genpy.Duration()."""
-    default_error_messages = {
-        'invalid': 'Not a valid duration.'
-    }
-
-    def _serialize(self, value, attr, obj):
-        # this is from https://github.com/ros/genpy/blob/kinetic-devel/src/genpy/rostime.py#L79
-        # improved to avoid precision on small float issue
-        secs = int(value)
-        nsecs = int((value * 1e9 - secs *1e9))
-        v = super(RosDuration, self)._serialize({'secs': secs, 'nsecs': nsecs}, attr, obj)
-        return v
-
-    def _deserialize(self, value, attr, obj):
-        v = super(RosDuration, self)._deserialize(value, attr, obj)
-        # this is from https://github.com/ros/genpy/blob/kinetic-devel/src/genpy/rostime.py#L115
-        return float(v.get('secs')) + float(v.get('nsecs')) / 1e9
+# class _RosDurationSchema(RosSchema):
+#     """A ros duration schema.
+#     -  rospy.Duration -> load() -> dict
+#     -  dict -> dump() -> rospy.Duration
+#     """
+#
+#     _valid_ros_msgtype = genpy.Duration
+#     _generated_ros_msgtype = genpy.Duration  # we also generate a genpy since it is compatible with rospy, and has the correct list of slots
+#
+#     secs = RosInt32()
+#     nsecs = RosInt32()
+#
+#
+# class RosDurationVerbatim(RosNested):
+#     """A ros time, serialized into a genpy.Duration()"""
+#     def __init__(self, *args, **kwargs):
+#         kwargs['nested'] = _RosDurationSchema  # forcing nested to be our schema
+#         super(RosDurationVerbatim, self).__init__(*args, **kwargs)
+#
+#
+# class RosDuration(RosDurationVerbatim):
+#     """
+#     A ros duration, serialized into a long int.
+#     We avoid float precision issues (since we want exact equality between serialized and deserialized values).
+#     Since 4294967295 < 9223372036854775807 / 1e9, our representation of the time with a long nsec value is valid
+#     """
+#     default_error_messages = {
+#         'invalid': 'Not a valid duration.'
+#     }
+#
+#     def _serialize(self, value, attr, obj):
+#         # we need to be careful here, we cannot use the fields directly,
+#         # and we need to use the proper method to have the desired meaningful data
+#         v = super(RosDuration, self)._serialize({'secs': secs, 'nsecs': nsecs}, attr, obj)
+#         return v
+#
+#     def _deserialize(self, value, attr, obj):
+#         v = super(RosDuration, self)._deserialize(value, attr, obj)
+#         # we need to be careful here, we cannot use the fields directly,
+#         # and we need to use the proper method to have the desired meaningful data
+#         return v.get('nsecs')
