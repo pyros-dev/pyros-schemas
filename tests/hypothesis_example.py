@@ -54,7 +54,7 @@ def type_and_value(draw, msgs_type_strat_tuples):
     'bool', 'int', 'float', 'nested'
 )))
 @hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1)
-def test_field_serialize_deserialize_from_ros_inverse(msg_rostype_and_value):
+def test_proper_type(msg_rostype_and_value):
     mtype = msg_rostype_and_value[0]
     mvalue = msg_rostype_and_value[1]
 

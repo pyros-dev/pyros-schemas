@@ -2,11 +2,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import pytest
 
-# for py2 / py3 compatibility
-import six
-six_long = six.integer_types[-1]
-
-
 try:
     import std_msgs.msg as std_msgs
     import genpy
@@ -47,7 +42,7 @@ from pyros_schemas.ros.types_mapping import (
     ros_pythontype_mapping
 )
 
-from . import maybe_list, proper_basic_strategy_selector, proper_basic_data_strategy_selector
+from . import six_long, maybe_list, proper_basic_strategy_selector, proper_basic_data_strategy_selector
 
 
 # TODO : make that generic to be able to test any message type...
@@ -98,7 +93,7 @@ def msg_rostype_and_value(draw, msgs_type_strat_tuples):
     #TODO : more of that...
 )))
 @hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
-def test_field_serialize_deserialize_from_ros_inverse(msg_rostype_and_value):
+def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
 

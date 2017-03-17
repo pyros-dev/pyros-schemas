@@ -68,17 +68,17 @@ def test_msgstring_py():
 
 
 def test_msgtime_ros():
-    yield gen_rosmsg_test, create(std_msgs.Time), std_msgs.Time(rospy.Time(secs=42, nsecs=31)), {'data': {'secs': 42, 'nsecs': 31}}
+    yield gen_rosmsg_test, create(std_msgs.Time), std_msgs.Time(rospy.Time(secs=42, nsecs=31)), {'data': six_long(42000000031)}
 
 def test_msgtime_py():
-    yield gen_pymsg_test, create(std_msgs.Time), std_msgs.Time(rospy.Time(secs=42, nsecs=31)), {'data': {'secs': 42, 'nsecs': 31}}
+    yield gen_pymsg_test, create(std_msgs.Time), std_msgs.Time(rospy.Time(secs=42, nsecs=31)), {'data': six_long(42000000031)}
 
 
 def test_msgduration_ros():
-    yield gen_rosmsg_test, create(std_msgs.Duration), std_msgs.Duration(rospy.Duration(secs=42, nsecs=31)), {'data': {'secs': 42, 'nsecs': 31}}
+    yield gen_rosmsg_test, create(std_msgs.Duration), std_msgs.Duration(rospy.Duration(secs=42, nsecs=31)), {'data': six_long(42000000031)}
 
 def test_msgduration_py():
-    yield gen_pymsg_test, create(std_msgs.Duration), std_msgs.Duration(rospy.Duration(secs=42, nsecs=31)), {'data': {'secs': 42, 'nsecs': 31}}
+    yield gen_pymsg_test, create(std_msgs.Duration), std_msgs.Duration(rospy.Duration(secs=42, nsecs=31)), {'data': six_long(42000000031)}
 
 # Just in case we run this directly
 if __name__ == '__main__':
