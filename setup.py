@@ -215,6 +215,9 @@ setuptools.setup(name='pyros_schemas',
         'publish': PublishCommand,
         'rospublish': ROSPublishCommand,
     },
+    install_requires=[
+        'hypothesis>=3.0.1' # to target xenial LTS version
+    ],
     zip_safe=False,  # TODO testing...
 )
 

@@ -31,11 +31,8 @@ from pyros_schemas.ros import (
     RosFloat32, RosFloat64,
     RosString, RosTextString,
     RosList,
-)
-
-from pyros_schemas.ros.time_fields import (
-    RosTimeVerbatim, RosTime,
-    RosDurationVerbatim, RosDuration,
+    RosTime,
+    RosDuration,
 )
 
 from pyros_schemas.ros.types_mapping import (
@@ -134,28 +131,17 @@ from pyros_schemas.ros.types_mapping import (
     (std_msgs.msg.String(data=u''), RosTextString, unicode, unicode, str),
     (std_msgs.msg.String(data=None), RosTextString, str, unicode, str),  # ROS will set a default of '' for that data
     (std_msgs.msg.String(), RosTextString, str, unicode, str),  # ROS will set a default of '' for that data
-    # TimeVerbatim
-    (std_msgs.msg.Time(genpy.Time(secs=42, nsecs=31)), RosTimeVerbatim, genpy.Time, dict, genpy.Time),
-    # Raises TypeError Reason: ROS checks for time values to be positive
-    # (std_msgs.msg.Time(genpy.Time(secs=-23, nsecs=31)), RosTimeVerbatim, genpy.Time, dict, genpy.Time),
-    (std_msgs.msg.Time(genpy.Time(secs=0, nsecs=0)), RosTimeVerbatim, genpy.Time, dict, genpy.Time),
-    (std_msgs.msg.Time(genpy.Time()), RosTimeVerbatim, genpy.Time, dict, genpy.Time),
     # Time
-    (std_msgs.msg.Time(genpy.Time(secs=42, nsecs=31)), RosTime, genpy.Time, float, genpy.Time),
+    (std_msgs.msg.Time(genpy.Time(secs=42, nsecs=31)), RosTime, genpy.Time, six_long, genpy.Time),
     # Raises TypeError Reason: ROS checks for time values to be positive
-    # (std_msgs.msg.Time(genpy.Time(secs=-23, nsecs=31)), RosTime, genpy.Time, float, genpy.Time),
-    (std_msgs.msg.Time(genpy.Time(secs=0, nsecs=0)), RosTime, genpy.Time, float, genpy.Time),
-    (std_msgs.msg.Time(genpy.Time()), RosTime, genpy.Time, float, genpy.Time),
-    # DurationVErbatim
-    (std_msgs.msg.Duration(genpy.Duration(secs=42, nsecs=31)), RosDurationVerbatim, genpy.Duration, dict, genpy.Duration),
-    (std_msgs.msg.Duration(genpy.Duration(secs=-23, nsecs=31)), RosDurationVerbatim, genpy.Duration, dict, genpy.Duration),
-    (std_msgs.msg.Duration(genpy.Duration(secs=0, nsecs=0)), RosDurationVerbatim, genpy.Duration, dict, genpy.Duration),
-    (std_msgs.msg.Duration(genpy.Duration()), RosDurationVerbatim, genpy.Duration, dict, genpy.Duration),
+    # (std_msgs.msg.Time(genpy.Time(secs=-23, nsecs=31)), RosTime, genpy.Time, six_long, genpy.Time),
+    (std_msgs.msg.Time(genpy.Time(secs=0, nsecs=0)), RosTime, genpy.Time, six_long, genpy.Time),
+    (std_msgs.msg.Time(genpy.Time()), RosTime, genpy.Time, six_long, genpy.Time),
     # Duration
-    (std_msgs.msg.Duration(genpy.Duration(secs=42, nsecs=31)), RosDuration, genpy.Duration, float, genpy.Duration),
-    (std_msgs.msg.Duration(genpy.Duration(secs=-23, nsecs=31)), RosDuration, genpy.Duration, float, genpy.Duration),
-    (std_msgs.msg.Duration(genpy.Duration(secs=0, nsecs=0)), RosDuration, genpy.Duration, float, genpy.Duration),
-    (std_msgs.msg.Duration(genpy.Duration()), RosDuration, genpy.Duration, float, genpy.Duration),
+    (std_msgs.msg.Duration(genpy.Duration(secs=42, nsecs=31)), RosDuration, genpy.Duration, six_long, genpy.Duration),
+    (std_msgs.msg.Duration(genpy.Duration(secs=-23, nsecs=31)), RosDuration, genpy.Duration, six_long, genpy.Duration),
+    (std_msgs.msg.Duration(genpy.Duration(secs=0, nsecs=0)), RosDuration, genpy.Duration, six_long, genpy.Duration),
+    (std_msgs.msg.Duration(genpy.Duration()), RosDuration, genpy.Duration, six_long, genpy.Duration),
 
     # To test arrays with simple messages (none in std_msgs)
     # not we do not play with optional patching here, we are just treating that message
@@ -200,7 +186,7 @@ def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, o
     if dictfield_pytype in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
         if in_rosfield_pytype == genpy.rostime.Time or in_rosfield_pytype == genpy.rostime.Duration:  # non verbatim basic fields
             # TODO : find a way to get rid of this special case...
-            assert deserialized == dictfield_pytype(msg.data.to_sec())
+            assert deserialized == dictfield_pytype(msg.data.to_nsec())
         elif in_rosfield_pytype == out_rosfield_pytype == list:  # TODO : improve this check
             # TODO : find a way to get rid of this special case...
             for idx, elem in enumerate(msg.data):
@@ -286,24 +272,14 @@ def test_fromros(msg, schema_field_type, in_rosfield_pytype, dictfield_pytype, o
     # Ros string field accepts unicode as data without validation, but then something will break in ROS later on...
     (u'fortytwo', RosTextString, std_msgs.msg.String, str, unicode),
     (u'', RosTextString, std_msgs.msg.String, str, unicode),
-    # TimeVerbatim
-    (dict(secs=42, nsecs=31), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict),
-    pytest.mark.xfail(strict=True, raises=TypeError, reason="ROS checks that times values are positive")((dict(secs=-23, nsecs=31), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict)),
-    (dict(secs=0, nsecs=0), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict),
-    (dict(), RosTimeVerbatim, std_msgs.msg.Time, genpy.Time, dict),
     # Time
-    (42.00000031, RosTime, std_msgs.msg.Time, genpy.Time, float),
-    pytest.mark.xfail(strict=True, raises=TypeError, reason="ROS checks that times values are positive")((-23.00000031, RosTime, std_msgs.msg.Time, genpy.Time, float)),
-    (0.0, RosTime, std_msgs.msg.Time, genpy.Time, float),
-    # Duration Verbatim
-    (dict(secs=42, nsecs=31), RosDurationVerbatim, std_msgs.msg.Duration, genpy.Duration, dict),
-    (dict(secs=-23, nsecs=31), RosDurationVerbatim, std_msgs.msg.Duration, genpy.Duration, dict),
-    (dict(secs=0, nsecs=0), RosDurationVerbatim, std_msgs.msg.Duration, genpy.Duration, dict),
-    (dict(), RosDurationVerbatim, std_msgs.msg.Duration, genpy.Duration, dict),
+    (42000000031, RosTime, std_msgs.msg.Time, genpy.Time, six_long),
+    pytest.mark.xfail(strict=True, raises=TypeError, reason="ROS checks that times values are positive")((-23000000031, RosTime, std_msgs.msg.Time, genpy.Time, six_long)),
+    (0.0, RosTime, std_msgs.msg.Time, genpy.Time, six_long),
     # Duration
-    (42.00000031, RosDuration, std_msgs.msg.Duration, genpy.Duration, float),
-    (-23.00000031, RosDuration, std_msgs.msg.Duration, genpy.Duration, float),
-    (0.0, RosDuration, std_msgs.msg.Duration, genpy.Duration, float),
+    (42000000031, RosDuration, std_msgs.msg.Duration, genpy.Duration, six_long),
+    (-23000000031, RosDuration, std_msgs.msg.Duration, genpy.Duration, six_long),
+    (0, RosDuration, std_msgs.msg.Duration, genpy.Duration, six_long),
 
     # To test arrays with simple messages (none in std_msgs)
     # not we do not play with optional patching here, we are just treating that message
@@ -330,7 +306,7 @@ def test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfiel
         assert serialized == pyfield
     else:  # not a basic type for python
         if pyfield_pytype in [int, six_long, float]:  # non verbatim basic fields
-            assert serialized == rosfield_pytype(secs=int(pyfield), nsecs=int(pyfield * 1e9 - int(pyfield) *1e9))
+            assert serialized == rosfield_pytype(secs=int(pyfield / 1e9), nsecs=int(pyfield * 1e9 - int(pyfield/1e9) *1e9))
         elif pyfield_pytype == list:
             for idx, elem in enumerate(pyfield):
                 assert serialized[idx] == elem

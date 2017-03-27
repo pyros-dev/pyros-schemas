@@ -14,6 +14,11 @@ except ImportError:
 
 import nose
 
+
+# for py2 / py3 compatibility
+import six
+six_long = six.integer_types[-1]
+
 from pyros_schemas.ros.schemagic import create
 
 # TODO Property based testing
