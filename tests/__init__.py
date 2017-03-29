@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 try:
     import std_msgs.msg as std_msgs
     import genpy
-    import pyros_msgs.msg
+    import pyros_msgs.opt_as_array
 except ImportError:
     # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
     import pyros_setup
@@ -11,7 +11,7 @@ except ImportError:
     pyros_setup.configurable_import().configure().activate()
     import std_msgs.msg as std_msgs
     import genpy
-    import pyros_msgs.msg
+    import pyros_msgs.opt_as_array
 
 import hypothesis
 import hypothesis.strategies as st
@@ -39,13 +39,41 @@ std_msgs_field_strat_ok = {
     'std_msgs/UInt64': st.integers(min_value=0, max_value=six_long(18446744073709551615)),
     'std_msgs/Float32': st.floats(min_value=-3.4028235e+38, max_value=3.4028235e+38),
     'std_msgs/Float64': st.floats(min_value=-1.7976931348623157e+308, max_value=1.7976931348623157e+308, ),
-    'std_msgs/String': st.one_of(st.binary(), st.text(alphabet=st.characters(max_codepoint=127))),
+    #'std_msgs/String': st.one_of(st.binary(), st.text(alphabet=st.characters(max_codepoint=127))),
+    #'std_msgs/String': st.binary(),  # this makes hypothesis crash on reporting (0x80 not valid in starting position : cannot be decoded with utf8)
+    'std_msgs/String': st.text(alphabet=st.characters(max_codepoint=127)),
     'std_msgs/Time':
         # only one way to build a python data for a time message
         st.integers(min_value=six_long(0), max_value=six_long(18446744073709551615)),
     'std_msgs/Duration':
         # only one way to build a python data for a duration message
         st.integers(min_value=-six_long(9223372036854775808), max_value=six_long(9223372036854775807)),
+    # TODO : add more. we should test all.
+}
+
+# For now We use a set of basic messages for testing
+pyros_msgs_optfield_strat_ok = {
+    # in python, booleans are integer type, but we dont want to test that here.
+    'pyros_msgs/test_opt_bool_as_array': st.one_of(st.none(), st.booleans()),
+    'pyros_msgs/test_opt_int8_as_array': st.one_of(st.none(), st.integers(min_value=-128, max_value=127)),  # in python booleans are integers
+    'pyros_msgs/test_opt_int16_as_array': st.one_of(st.none(), st.integers(min_value=-32768, max_value=32767)),
+    'pyros_msgs/test_opt_int32_as_array': st.one_of(st.none(), st.integers(min_value=-2147483648, max_value=2147483647)),
+    'pyros_msgs/test_opt_int64_as_array': st.one_of(st.none(), st.integers(min_value=-six_long(9223372036854775808), max_value=six_long(9223372036854775807))),
+    'pyros_msgs/test_opt_uint8_as_array': st.one_of(st.none(), st.integers(min_value=0, max_value=255)),
+    'pyros_msgs/test_opt_uint16_as_array': st.one_of(st.none(), st.integers(min_value=0, max_value=65535)),
+    'pyros_msgs/test_opt_uint32_as_array': st.one_of(st.none(), st.integers(min_value=0, max_value=4294967295)),
+    'pyros_msgs/test_opt_uint64_as_array': st.one_of(st.none(), st.integers(min_value=0, max_value=six_long(18446744073709551615))),
+    'pyros_msgs/test_opt_float32_as_array': st.one_of(st.none(), st.floats(min_value=-3.4028235e+38, max_value=3.4028235e+38)),
+    'pyros_msgs/test_opt_float64_as_array': st.one_of(st.none(), st.floats(min_value=-1.7976931348623157e+308, max_value=1.7976931348623157e+308, )),
+    #'pyros_msgs/test_opt_string_as_array': st.one_of(st.none(), st.binary(), st.text(alphabet=st.characters(max_codepoint=127))),
+    #'pyros_msgs/test_opt_string_as_array': st.one_of(st.none(), st.binary()),  # this makes hypothesis crash on reporting (0x80 not valid in starting position : cannot be decoded with utf8)
+    'pyros_msgs/test_opt_string_as_array': st.one_of(st.none(), st.text(alphabet=st.characters(max_codepoint=127))),
+    'pyros_msgs/test_opt_time_as_array':
+        # only one way to build a python data for a time message
+        st.one_of(st.none(), st.integers(min_value=six_long(0), max_value=six_long(18446744073709551615))),
+    'pyros_msgs/test_opt_duration_as_array':
+        # only one way to build a python data for a duration message
+        st.one_of(st.none(), st.integers(min_value=-six_long(9223372036854775808), max_value=six_long(9223372036854775807))),
     # TODO : add more. we should test all.
 }
 
@@ -71,6 +99,37 @@ std_msgs_types_strat_ok = {
         st.builds(genpy.Time, secs=st.floats(min_value=0, allow_infinity=False, allow_nan=False)),
     )),
     'std_msgs/Duration': st.builds(std_msgs.Duration, data=st.one_of(
+        # different ways to build a genpy.duration (check genpy code)
+        st.builds(genpy.Duration, secs=st.integers(min_value=-2147483648, max_value=2147483647), nsecs=st.integers(min_value=-2147483648, max_value=2147483647)),
+        #st.builds(genpy.Duration, nsecs=st.integers(min_value=six_long(0), max_value=six_long(9223372036854775807))),  # to slow for now (waiting on genpy patch)
+        st.builds(genpy.Duration, secs=st.floats(allow_infinity=False, allow_nan=False)),
+    )),
+    # TODO : add more. we should test all.
+}
+
+
+pyros_msgs_types_strat_ok = {
+    # in python, booleans are integer type, but we dont want to test that here.
+    # Where there is no ambiguity, we can reuse std_msgs_dict_field_strat_ok strategies
+    'pyros_msgs/test_opt_bool_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_bool_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_bool_as_array')),
+    'pyros_msgs/test_opt_int8_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_int8_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_int8_as_array')),
+    'pyros_msgs/test_opt_int16_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_int16_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_int16_as_array')),
+    'pyros_msgs/test_opt_int32_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_int32_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_int32_as_array')),
+    'pyros_msgs/test_opt_int64_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_int64_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_int64_as_array')),
+    'pyros_msgs/test_opt_uint8_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_uint8_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_uint8_as_array')),
+    'pyros_msgs/test_opt_uint16_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_uint16_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_uint16_as_array')),
+    'pyros_msgs/test_opt_uint32_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_uint32_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_uint32_as_array')),
+    'pyros_msgs/test_opt_uint64_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_uint64_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_uint64_as_array')),
+    'pyros_msgs/test_opt_float32_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_float32_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_float32_as_array')),
+    'pyros_msgs/test_opt_float64_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_float64_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_float64_as_array')),
+    'pyros_msgs/test_opt_string_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_string_as_array, data=pyros_msgs_optfield_strat_ok.get('pyros_msgs/test_opt_string_as_array')),
+    'pyros_msgs/test_opt_time_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_time_as_array, data=st.one_of(
+        # different ways to build a genpy.time (check genpy code)
+        st.builds(genpy.Time, secs=st.integers(min_value=0, max_value=4294967295), nsecs=st.integers(min_value=0, max_value=4294967295)),
+        #st.builds(genpy.Time, nsecs=st.integers(min_value=six_long(0), max_value=six_long(9223372036854775807))),  # too slow for now (waiting on genpy patch)
+        st.builds(genpy.Time, secs=st.floats(min_value=0, allow_infinity=False, allow_nan=False)),
+    )),
+    'pyros_msgs/test_opt_duration_as_array': st.builds(pyros_msgs.opt_as_array.test_opt_duration_as_array, data=st.one_of(
         # different ways to build a genpy.duration (check genpy code)
         st.builds(genpy.Duration, secs=st.integers(min_value=-2147483648, max_value=2147483647), nsecs=st.integers(min_value=-2147483648, max_value=2147483647)),
         #st.builds(genpy.Duration, nsecs=st.integers(min_value=six_long(0), max_value=six_long(9223372036854775807))),  # to slow for now (waiting on genpy patch)

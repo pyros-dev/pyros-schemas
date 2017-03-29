@@ -68,7 +68,7 @@ std_msgs_types_data_schemas_rostype_pytype = {
 
 # We need a composite strategy to link slot type and slot value
 @st.composite
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1)
 def msg_rostype_and_value(draw, msgs_type_strat_tuples):
     msg_type_strat = draw(st.sampled_from(msgs_type_strat_tuples))
     msg_value = draw(msg_type_strat[1])
@@ -92,7 +92,7 @@ def msg_rostype_and_value(draw, msgs_type_strat_tuples):
     # 'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
@@ -149,7 +149,7 @@ def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
     # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
     # Same values as for ros message test
@@ -208,6 +208,7 @@ def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
 # Just in case we run this directly
 if __name__ == '__main__':
     pytest.main([
-        'test_basic_fields.py::test_fromros',
-        'test_basic_fields.py::test_frompy',
+        '-s',
+        'test_basic_fields.py::test_field_deserialize_serialize_from_ros_inverse',
+        'test_basic_fields.py::test_field_serialize_deserialize_from_py_inverse',
     ])

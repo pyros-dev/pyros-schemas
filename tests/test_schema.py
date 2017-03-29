@@ -30,7 +30,7 @@ import hypothesis.strategies as st
 
 # We need a composite strategy to link msg type and dict structure
 @st.composite
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def msg_rostype_and_dict(draw, msgs_type_strat_tuples):
     msg_type_strat = draw(st.sampled_from(msgs_type_strat_tuples))
     msg_value = draw(msg_type_strat[1])
@@ -55,7 +55,7 @@ def msg_rostype_and_dict(draw, msgs_type_strat_tuples):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_schema_load_dump_fromros_inverse(msg_rostype_value_and_dict):
     msg_rostype = msg_rostype_value_and_dict[0]  # just for info/debug purposes
     ros_msg = msg_rostype_value_and_dict[1]
@@ -73,7 +73,7 @@ def test_schema_load_dump_fromros_inverse(msg_rostype_value_and_dict):
 
 # We need a composite strategy to link msg type and dict structure
 @st.composite
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def msg_dict_and_rostype(draw, msgs_dict_strat_tuples):
     msg_dict_strat = draw(st.sampled_from(msgs_dict_strat_tuples))
     msg_dict = draw(msg_dict_strat[1])
@@ -98,7 +98,7 @@ def msg_dict_and_rostype(draw, msgs_dict_strat_tuples):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1, suppress_health_check=[hypothesis.HealthCheck.too_slow])
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_schema_dump_load_frompy_inverse(msg_rostype_dict_and_value):
     msg_rostype = msg_rostype_dict_and_value[0]  # just for info/debug purposes
     py_inst = msg_rostype_dict_and_value[1]
@@ -121,6 +121,7 @@ def test_schema_dump_load_frompy_inverse(msg_rostype_dict_and_value):
 # Just in case we run this directly
 if __name__ == '__main__':
     pytest.main([
-        'test_basic_fields.py::test_fromros',
-        'test_basic_fields.py::test_frompy',
+        '-s',
+        'test_schema.py::test_schema_load_dump_fromros_inverse',
+        'test_schema.py::test_schema_dump_load_frompy_inverse',
     ])
