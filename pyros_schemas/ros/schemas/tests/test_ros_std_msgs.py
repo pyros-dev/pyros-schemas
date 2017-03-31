@@ -31,8 +31,6 @@ from pyros_schemas.ros import (
     RosMsgString,
 )
 
-from pyros_schemas.ros import with_explicitly_matched_type
-
 
 @nose.tools.nottest
 def gen_rosmsg_test(schemaType, ros_msg, py_inst_expected):
