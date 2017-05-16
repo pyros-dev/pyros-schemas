@@ -11,7 +11,6 @@ project(pyros_schemas)
 
 find_package(catkin REQUIRED COMPONENTS
     catkin_pip
-    roslint
     std_msgs
 )
 
