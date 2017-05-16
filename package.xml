@@ -15,6 +15,7 @@
   <url type="bugtracker">https://bitbucket.org/yujinrobot/gopher_schemas/issues</url>
 
   <buildtool_depend version_gte="0.6.18">catkin</buildtool_depend>
+  <buildtool_depend version_gte="0.2.0">catkin_pip</buildtool_depend>
 
   <depend version_gte="1.5.2">python-six</depend>
   <depend version_gte="1.11.19">rospy</depend>
