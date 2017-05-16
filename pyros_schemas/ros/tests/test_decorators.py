@@ -77,7 +77,7 @@ def test_with_validated_generated_type():
 
     original_ok = Original(answer=42)
     original_invalid = Original(answer='fortytwo')
-    schema = SchemaWithValidatedGeneratedType(strict=True)  # we usually want to be strict and explicitely fail.
+    schema = SchemaWithValidatedGeneratedType(strict=True)  # we usually want to be strict and explicitly fail.
 
     # Testing deserialization
     unmarshalled = schema.load(original_ok)

@@ -3,14 +3,13 @@ from __future__ import print_function
 
 import functools
 import nose
+import pytest
 import marshmallow.utils
 
 try:
     import std_msgs
     import genpy
     import rospy
-    import pyros_msgs.opt_as_array  # This will duck punch the standard message type initialization code.
-    from pyros_msgs.msg import test_opt_bool_as_array  # a message type just for testing
 except ImportError:
     # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
     import pyros_setup
@@ -19,13 +18,24 @@ except ImportError:
     import std_msgs
     import genpy
     import rospy
-    import pyros_msgs.opt_as_array  # This will duck punch the standard message type initialization code.
-    from pyros_msgs.msg import test_opt_bool_as_array  # a message type just for testing
-    from pyros_msgs.msg import test_opt_float32_as_array  # a message type just for testing
-    # TODO : all of them
 
-# patching
-pyros_msgs.opt_as_array.duck_punch(test_opt_bool_as_array, ['data'])
+
+# generating all and accessing the required message class.
+from pyros_schemas.ros.tests import msg_generate
+
+try:
+    test_gen_msgs, gen_test_srvs = msg_generate.generate_test_msgs()
+except Exception as e:
+    pytest.raises(e)
+
+
+import hypothesis
+import hypothesis.strategies
+
+
+import pyros_msgs.opt_as_array
+# patching (need to know the field name)
+pyros_msgs.opt_as_array.duck_punch(test_gen_msgs.test_opt_bool_as_array, ['data'])
 
 
 # absolute import ros field types
@@ -127,25 +137,25 @@ def frompyopt(py_inst, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Except
 
 def test_ros_field_opt_bool():
     # Test all explicit values when possible, or pick a few meaningful ones
-    yield fromrosopt, test_opt_bool_as_array(data=True), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_opt_bool_as_array(data=False), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_opt_bool_as_array(data=[True]), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_opt_bool_as_array(data=[False]), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=True), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=False), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=[True]), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=[False]), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
     # also test [], None and default value
-    yield fromrosopt, test_opt_bool_as_array(data=[]), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_opt_bool_as_array(data=None), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_opt_bool_as_array(), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=[]), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=None), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
 
     # Reverse test
 
     # Test all explicit values when possible, or pick a few meaningful ones
-    yield frompyopt, True, lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield frompyopt, False, lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
+    yield frompyopt, True, lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield frompyopt, False, lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
     # also test [], None and default value
-    yield frompyopt, [], lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
-    yield frompyopt, None, lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
+    yield frompyopt, [], lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+    yield frompyopt, None, lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
     # careful : bool() defaults to False
-    yield frompyopt, bool(), lambda: RosOptAsList(RosBool()), test_opt_bool_as_array, bool, list
+    yield frompyopt, bool(), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
 
 
 # TODO : all of the field types...

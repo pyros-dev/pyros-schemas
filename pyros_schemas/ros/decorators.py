@@ -121,7 +121,9 @@ def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
             @marshmallow.validates_schema
             def _validate_ros_type(self, data):
                 # extracting members from ROS type (we do not check internal type, we will just try conversion - python style)
-                if hasattr(self._valid_ros_type, '__slots__'):  # ROS style
+                if hasattr(self._valid_ros_type, '_fields'):  # named tuples - CAREFUL they also have an empty __slots__
+                    rtkeys = list(self._valid_ros_type._fields)
+                elif hasattr(self._valid_ros_type, '__slots__'):  # ROS style
                     slots = []
                     ancestors = inspect.getmro(self._valid_ros_type)
                     for a in ancestors:
@@ -148,7 +150,9 @@ def with_explicitly_matched_type(valid_ros_type, generated_ros_type=None):
 
             @marshmallow.pre_load
             def _from_ros_type_to_dict(self, data):
-                if hasattr(data, '__slots__'):  # ROS style
+                if hasattr(data, '_asdict'):  # named tuples (for tests) - Careful they also have an empty __slots__
+                    return data._asdict()
+                elif hasattr(data, '__slots__'):  # ROS style
                     slots = []
                     ancestors = inspect.getmro(type(data))
                     for a in ancestors:
