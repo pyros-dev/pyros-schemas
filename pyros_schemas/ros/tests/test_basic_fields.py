@@ -1,8 +1,6 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
-import functools
-import nose
+import pytest
 
 try:
     import std_msgs
@@ -28,7 +26,6 @@ from pyros_schemas.ros.basic_fields import (
 # Test functions, called via test generator
 #
 
-@nose.tools.nottest
 def fromros(ros_msg, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptions=()):
 
     try:
@@ -61,7 +58,6 @@ def fromros(ros_msg, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptio
         assert len(Expected_Exceptions) == 0
 
 
-@nose.tools.nottest
 def frompy(py_inst, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptions=()):
 
     try:
@@ -328,4 +324,4 @@ def test_ros_field_textstring():
 
 # Just in case we run this directly
 if __name__ == '__main__':
-    nose.runmodule(__name__)
+    pytest.main(['-s', '-x', __file__])

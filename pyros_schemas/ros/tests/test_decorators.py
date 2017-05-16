@@ -8,11 +8,12 @@ import nose
 
 
 # "private" decorators
-from pyros_schemas.ros import wraps_cls
+from pyros_schemas.ros.decorators import wraps_cls
 
 # public decorators
-from pyros_schemas.ros import with_explicitly_matched_type #, with_explicitly_matched_optional_type
+from pyros_schemas.ros.decorators import with_explicitly_matched_type #, with_explicitly_matched_optional_type
 
+# TODO : test with_service_schemas
 
 #
 # Testing generic class wraps_cls decorator

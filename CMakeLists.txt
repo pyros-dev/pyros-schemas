@@ -10,33 +10,24 @@ project(pyros_schemas)
 ##############################################################################
 
 find_package(catkin REQUIRED COMPONENTS
+    catkin_pip
     roslint
     std_msgs
 )
-
-
-catkin_python_setup()
-
-
-# Lint Python modules
-file(GLOB_RECURSE ${PROJECT_NAME}_PY_SRCS
-     RELATIVE ${PROJECT_SOURCE_DIR} pyros_schemas/*.py)
-roslint_python(${${PROJECT_NAME}_PY_SRCS})
-
 
 
 ##############################################################################
 # Catkin
 ##############################################################################
 
-catkin_package()
+catkin_pip_package(pyros_schemas)
 
 #########
 # Tests
 #######
 
 if (CATKIN_ENABLE_TESTING)
-  catkin_add_nosetests(pyros_schemas/ros/tests)
+  catkin_add_pytests(pyros_schemas/ros/tests)
 endif()
 
 

@@ -43,14 +43,12 @@ if __package__ is None and not __name__.startswith('pyros_schemas.ros.'):
 try:
     # To be able to run doctest directly we avoid relative import
     import genpy
-    import rospy
 except ImportError:
     # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
     import pyros_setup
     # We rely on default configuration to point us to the proper distro
     pyros_setup.configurable_import().configure().activate()
     import genpy
-    import rospy
 
 
 # From here we can pick this up from ROS if missing in python env.
