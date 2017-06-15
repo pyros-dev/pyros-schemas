@@ -1,170 +1,300 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-import functools
-import nose
 import pytest
-import marshmallow.utils
 
 try:
-    import std_msgs
+    import std_msgs.msg as std_msgs
     import genpy
-    import rospy
+    import pyros_msgs.msg
 except ImportError:
     # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
     import pyros_setup
-    # We rely on default configuration to point us ot the proper distro
+    # We rely on default configuration to point us to the proper distro
     pyros_setup.configurable_import().configure().activate()
-    import std_msgs
+    import std_msgs.msg as std_msgs
     import genpy
-    import rospy
+    import pyros_msgs.msg
 
-
-# generating all and accessing the required message class.
-from pyros_schemas.ros.tests import msg_generate
-
-try:
-    test_gen_msgs, gen_test_srvs = msg_generate.generate_test_msgs()
-except Exception as e:
-    pytest.raises(e)
-
-
+import six
+import marshmallow
 import hypothesis
-import hypothesis.strategies
-
-
-import pyros_msgs.opt_as_array
-# patching (need to know the field name)
-pyros_msgs.opt_as_array.duck_punch(test_gen_msgs.test_opt_bool_as_array, ['data'])
-
+import hypothesis.strategies as st
 
 # absolute import ros field types
-from pyros_schemas.ros.basic_fields import (
+from pyros_schemas.ros import (
     RosBool,
     RosInt8, RosInt16, RosInt32, RosInt64,
     RosUInt8, RosUInt16, RosUInt32, RosUInt64,
     RosFloat32, RosFloat64,
     RosString, RosTextString,
+    RosList,
+    RosTime,
+    RosDuration,
 )
+
 from pyros_schemas.ros.optional_fields import (
     RosOptAsList,
-    RosOptAsNested,  # TODO : optional message as Nested
 )
 
 
-#
-# Test functions, called via test generator
-#
+from pyros_schemas.ros.types_mapping import (
+    ros_msgtype_mapping,
+    ros_pythontype_mapping
+)
 
-@nose.tools.nottest
-def fromrosopt(ros_msg, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptions=()):
+from . import six_long, maybe_list, proper_basic_optmsg_strategy_selector, proper_basic_optdata_strategy_selector
 
-    try:
-        # verifying ros_msg type first (static typing - ROS style)
-        assert isinstance(ros_msg, RosMsgType)
 
-        field = FieldType()
+# TODO : make that generic to be able to test any message type...
+# Note : we do not want to test implicit python type conversion here (thats the job of pyros_msgs typechecker)
+#: (schema_field_type, rosfield_pytype, dictfield_pytype)
+pyros_msgs_opttypes_data_schemas_rosopttype_pytype = {
+    'pyros_msgs/test_opt_bool_as_array': (lambda: RosOptAsList(RosBool()), bool, bool),
+    'pyros_msgs/test_opt_int8_as_array': (lambda: RosOptAsList(RosInt8()), int, int),
+    'pyros_msgs/test_opt_int16_as_array': (lambda: RosOptAsList(RosInt16()), int, int),
+    'pyros_msgs/test_opt_int32_as_array': (lambda: RosOptAsList(RosInt32()), int, int),
+    'pyros_msgs/test_opt_int64_as_array': (lambda: RosOptAsList(RosInt64()), six_long, six_long),
+    'pyros_msgs/test_opt_uint8_as_array': (lambda: RosOptAsList(RosUInt8()), int, int),
+    'pyros_msgs/test_opt_uint16_as_array': (lambda: RosOptAsList(RosUInt16()), int, int),
+    'pyros_msgs/test_opt_uint32_as_array': (lambda: RosOptAsList(RosUInt32()), int, int),
+    'pyros_msgs/test_opt_uint64_as_array': (lambda: RosOptAsList(RosUInt64()), six_long, six_long),
+    'pyros_msgs/test_opt_float32_as_array': (lambda: RosOptAsList(RosFloat32()), float, float),
+    'pyros_msgs/test_opt_float64_as_array': (lambda: RosOptAsList(RosFloat64()), float, float),
+    'pyros_msgs/test_opt_string_as_array': [(lambda: RosOptAsList(RosString()), six.binary_type, six.binary_type)],  #, (RosTextString, six.binary_type, six.text_type)],
+    'pyros_msgs/test_opt_time_as_array': [(lambda: RosOptAsList(RosTime()), genpy.Time, six_long)],
+    'pyros_msgs/test_opt_duration_as_array': [(lambda: RosOptAsList(RosDuration()), genpy.Duration, six_long)],
+}
 
-        assert hasattr(ros_msg, 'data')
-        assert isinstance(ros_msg.data, PyTypeRos)
 
-        deserialized = field.deserialize(ros_msg.data)
+# We need a composite strategy to link slot type and slot value
+@st.composite
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1)
+def msg_rostype_and_value(draw, msgs_type_strat_tuples):
+    msg_type_strat = draw(st.sampled_from(msgs_type_strat_tuples))
+    # print(msg_type_strat[1])  # just in case, to help debugging strategies
+    msg_value = draw(msg_type_strat[1])
+    return msg_type_strat[0], msg_value
 
-        # check the serialized version is the type we expect (or a missing optional field)
-        assert isinstance(deserialized, PyType) or deserialized == marshmallow.utils.missing
-        if deserialized != marshmallow.utils.missing:
-            # check the serialized value is the same as the value of that field in the original message
-            # We need the type conversion to deal with serialized object in different format than ros data (like string)
-            assert deserialized == ros_msg.data[0]  # This is another (type dependent) way to deserialize
+
+@hypothesis.given(msg_rostype_and_value(proper_basic_optmsg_strategy_selector(
+    'pyros_msgs/test_opt_bool_as_array',
+    'pyros_msgs/test_opt_int8_as_array',
+    'pyros_msgs/test_opt_int16_as_array',
+    'pyros_msgs/test_opt_int32_as_array',
+    'pyros_msgs/test_opt_int64_as_array',
+    'pyros_msgs/test_opt_uint8_as_array',
+    'pyros_msgs/test_opt_uint16_as_array',
+    'pyros_msgs/test_opt_uint32_as_array',
+    'pyros_msgs/test_opt_uint64_as_array',
+    'pyros_msgs/test_opt_float32_as_array',
+    'pyros_msgs/test_opt_float64_as_array',
+    'pyros_msgs/test_opt_string_as_array',
+    'pyros_msgs/test_opt_time_as_array',
+    'pyros_msgs/test_opt_duration_as_array',
+    #TODO : more of that...
+)))
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
+def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
+    msg_type = msg_rostype_and_value[0]
+    msg_value = msg_rostype_and_value[1]
+
+    # testing all possible schemas for data field
+    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+        schema_field_type, rosfield_pytype, dictfield_pytype = possible_interpretation
+
+        # Schemas' Field constructor
+        field = schema_field_type()
+
+        assert hasattr(msg_value, 'data')
+        deserialized = field.deserialize(msg_value.data)
+
+        # check the deserialized version is the type we expect (or a missing optional field)
+        assert isinstance(deserialized, dictfield_pytype) or deserialized == marshmallow.utils.missing
+        if deserialized != marshmallow.utils.missing:  # no point to do further testing on missing field
+
             serialized = field.serialize(0, [deserialized])
 
-            # Check the field value we obtain is the same, both type and value.
-            assert isinstance(serialized, type(ros_msg.data))  # This is another (type dependent) way to serialize
-            assert serialized == ros_msg.data
-
-    except Expected_Exceptions:
-        pass
-    except Exception:
-        raise
-    else:
-        # If no exception, make sure we weren't expecting any
-        assert len(Expected_Exceptions) == 0
+            # Check the field value we obtain is the expected ros type and same value.
+            assert isinstance(serialized[0], rosfield_pytype)
+            assert serialized == msg_value.data
 
 
-@nose.tools.nottest
-def frompyopt(py_inst, FieldType, RosMsgType, PyType, PyTypeRos, Expected_Exceptions=()):
+@hypothesis.given(msg_rostype_and_value(proper_basic_optmsg_strategy_selector(
+    # 'pyros_msgs/test_opt_bool_as_array',
+    # 'pyros_msgs/test_opt_int8_as_array',
+    # 'pyros_msgs/test_opt_int16_as_array',
+    # 'pyros_msgs/test_opt_int32_as_array',
+    # 'pyros_msgs/test_opt_int64_as_array',
+    # 'pyros_msgs/test_opt_uint8_as_array',
+    # 'pyros_msgs/test_opt_uint16_as_array',
+    # 'pyros_msgs/test_opt_uint32_as_array',
+    # 'pyros_msgs/test_opt_uint64_as_array',
+    # 'pyros_msgs/test_opt_float32_as_array',
+    # 'pyros_msgs/test_opt_float64_as_array',
+    # 'pyros_msgs/test_opt_string_as_array',
+    'pyros_msgs/test_opt_time_as_array',
+    'pyros_msgs/test_opt_duration_as_array',
+    #TODO : more of that...
+)))
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
+def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
+    msg_type = msg_rostype_and_value[0]
+    msg_value = msg_rostype_and_value[1]
 
-    try:
-        # verifying parameter type can at least convert (useful for unicode - str correspondance)
-        # TODO : make this generic (checking slots), or have different functions to check type conversion for each type...
-        # PyType(secs=py_inst.secs, nsecs=py_inst.nsecs)  # just try dynamic typing - python style - to make sure it wont except
+    # testing all possible schemas for data field
+    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+        schema_field_type, rosfield_pytype, dictfield_pytype = possible_interpretation
 
-        # verifying ros_msg type first (static typing - ROS style)
-        # assert isinstance(py_inst, PyType)  # TODO : not always true (see string...)
+        # Schemas' Field constructor
+        field = schema_field_type()
 
-        field = FieldType()
+        assert hasattr(msg_value, 'data')
+        # Making sure the data msg field is of the intended pytype
+        # in case ROS messages do - or dont do - some conversions
+        assert len(msg_value.data) == 0 or isinstance(msg_value.data[0], rosfield_pytype)
+        deserialized = field.deserialize(msg_value.data)
 
-        serialized = field.serialize(0, [py_inst])
-
-        # Check the field value we obtain is the expected one and can be used to build a ROS message.
-        assert isinstance(serialized, PyTypeRos)
-        if serialized != []:
-            # assert serialized == py_inst  DOES NOT APPLY FOR NESTED SCHEMA
-
-            ros_msg = RosMsgType(data=serialized)
-            assert isinstance(ros_msg.data, PyTypeRos)
-            # assert ros_msg.data == py_inst  DOES NOT APPLY FOR NESTED SCHEMA
-
-            deserialized = field.deserialize(ros_msg.data)
-
-            # check the serialized version is the type we expect
-            assert isinstance(deserialized, PyType)
-            # check the serialized value is the same as the original object
-            # assert deserialized == py_inst  # DOES NOT APPLY FOR DEFAULT VALUES
-
-    except Expected_Exceptions:
-        pass
-    except Exception:
-        raise
-    else:
-        # If no exception, make sure we weren't expecting any
-        assert len(Expected_Exceptions) == 0
-
-#
-# Testing each ros field type
-#
-
-
-def test_ros_field_opt_bool():
-    # Test all explicit values when possible, or pick a few meaningful ones
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=True), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=False), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=[True]), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=[False]), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    # also test [], None and default value
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=[]), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(data=None), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield fromrosopt, test_gen_msgs.test_opt_bool_as_array(), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-
-    # Reverse test
-
-    # Test all explicit values when possible, or pick a few meaningful ones
-    yield frompyopt, True, lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield frompyopt, False, lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    # also test [], None and default value
-    yield frompyopt, [], lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    yield frompyopt, None, lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
-    # careful : bool() defaults to False
-    yield frompyopt, bool(), lambda: RosOptAsList(RosBool()), test_gen_msgs.test_opt_bool_as_array, bool, list
+        # check the deserialized version is the type we expect (or a missing optional field)
+        assert deserialized == marshmallow.utils.missing or isinstance(deserialized, dictfield_pytype)
+        if deserialized != marshmallow.utils.missing:
+            # check the deserialized value is the same as the value of that field in the original message
+            # We need the type conversion to deal with deserialized object in different format than ros data (like string)
+            # we also need to deal with slots in case we have complex objects (only one level supported)
+            if dictfield_pytype in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
+                if rosfield_pytype == genpy.rostime.Time or rosfield_pytype == genpy.rostime.Duration:  # non verbatim basic fields
+                    # TODO : find a way to get rid of this special case...
+                    assert deserialized == dictfield_pytype(msg_value.data[0].to_nsec())
+                elif rosfield_pytype == list:  # TODO : improve this check
+                    # TODO : find a way to get rid of this special case...
+                    for idx, elem in enumerate(msg_value.data):
+                        assert deserialized[idx] == elem
+                else:
+                    assert deserialized == dictfield_pytype(msg_value.data[0])
+            else:  # not a basic type for python (slots should be there though...)
+                assert deserialized == dictfield_pytype(
+                    [(s, getattr(msg_value.data, s)) for s in msg_value.data.__slots__])
 
 
-# TODO : all of the field types...
 
-# # Since the rospy message type member field is already a python int,
-# # we do not need anything special here, we rely on marshmallow python type validation.
-# # Yet we are specifying each on in case we want to extend it later...
-#
+@hypothesis.given(msg_rostype_and_value(proper_basic_optdata_strategy_selector(
+    'pyros_msgs/test_opt_bool_as_array',
+    'pyros_msgs/test_opt_int8_as_array',
+    'pyros_msgs/test_opt_int16_as_array',
+    'pyros_msgs/test_opt_int32_as_array',
+    'pyros_msgs/test_opt_int64_as_array',
+    'pyros_msgs/test_opt_uint8_as_array',
+    'pyros_msgs/test_opt_uint16_as_array',
+    'pyros_msgs/test_opt_uint32_as_array',
+    'pyros_msgs/test_opt_uint64_as_array',
+    'pyros_msgs/test_opt_float32_as_array',
+    'pyros_msgs/test_opt_float64_as_array',
+    'pyros_msgs/test_opt_string_as_array',
+    'pyros_msgs/test_opt_time_as_array',
+    'pyros_msgs/test_opt_duration_as_array',
+    #TODO : more of that...
+)))
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
+def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
+    # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
+    # Same values as for ros message test
+    msg_type = msg_rostype_and_value[0]
+    pyfield = msg_rostype_and_value[1]
+
+    # get actual type from type string
+    rosmsg_type = genpy.message.get_message_class(msg_type)
+
+    # testing all possible schemas for data field
+    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+        schema_field_type, rosfield_pytype, pyfield_pytype = possible_interpretation
+
+        # test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfield_pytype):
+
+        # Schemas' Field constructor
+        field = schema_field_type()
+
+        serialized = field.serialize(0, [pyfield])
+
+        # Building the ros message in case it changes something...
+        ros_msg = rosmsg_type(data=serialized)
+        deserialized = field.deserialize(ros_msg.data)
+
+        if deserialized != marshmallow.utils.missing:
+
+            # Check the dict we obtain is the expected type and same value.
+            assert isinstance(deserialized, pyfield_pytype)
+            if pyfield_pytype not in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
+                # If we were missing some fields, we need to initialise to default ROS value to be able to compare
+                for i, s in enumerate(ros_msg.data.__slots__):
+                    if s not in pyfield.keys():
+                        pyfield[s] = ros_pythontype_mapping[ros_msg.data._slot_types[i]]()
+
+            assert deserialized == pyfield
+
+@hypothesis.given(msg_rostype_and_value(proper_basic_optdata_strategy_selector(
+    'pyros_msgs/test_opt_bool_as_array',
+    'pyros_msgs/test_opt_int8_as_array',
+    'pyros_msgs/test_opt_int16_as_array',
+    'pyros_msgs/test_opt_int32_as_array',
+    'pyros_msgs/test_opt_int64_as_array',
+    'pyros_msgs/test_opt_uint8_as_array',
+    'pyros_msgs/test_opt_uint16_as_array',
+    'pyros_msgs/test_opt_uint32_as_array',
+    'pyros_msgs/test_opt_uint64_as_array',
+    'pyros_msgs/test_opt_float32_as_array',
+    'pyros_msgs/test_opt_float64_as_array',
+    'pyros_msgs/test_opt_string_as_array',
+    'pyros_msgs/test_opt_time_as_array',
+    'pyros_msgs/test_opt_duration_as_array',
+    # TODO : more of that...
+)))
+@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
+def test_field_serialize_from_py_to_listtype(msg_rostype_and_value):
+    # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
+    # Same values as for ros message test
+    msg_type = msg_rostype_and_value[0]
+    pyfield = msg_rostype_and_value[1]
+
+    # get actual type from type string
+    rosmsg_type = genpy.message.get_message_class(msg_type)
+
+    # testing all possible schemas for data field
+    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+        schema_field_type, rosfield_pytype, pyfield_pytype = possible_interpretation
+
+        # test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfield_pytype):
+
+        # Schemas' Field constructor
+        field = schema_field_type()
+
+        serialized = field.serialize(0, [pyfield])
+
+        # Check the serialized field is the type we expect.
+        assert len(serialized) == 0 or isinstance(serialized[0], rosfield_pytype)
+        if len(serialized) > 0:
+            # check the serialized value is the same as the value of that field in the original message
+            # We need the type conversion to deal with serialized object in different format than ros data (like string)
+            # we also need to deal with slots in case we have complex objects (only one level supported)
+            if rosfield_pytype in [bool, int, six_long, float, six.binary_type, six.text_type]:
+                assert serialized[0] == pyfield
+            else:  # not a basic type for python
+                if rosfield_pytype == genpy.Time or rosfield_pytype == genpy.Duration:
+                    # these are deserialized (deterministically) as basic types (long nsecs)
+                    # working around genpy.rostime abismal performance
+                    pyfield_s = pyfield // 1000000000
+                    pyfield_ns = pyfield - pyfield_s * 1000000000
+                    assert serialized[0] == rosfield_pytype(secs=pyfield_s, nsecs=pyfield_ns)
+                elif pyfield_pytype == list:
+                    for idx, elem in enumerate(pyfield):
+                        assert serialized[idx][0] == elem
+                else:  # dict format can be used for nested types though...
+                    assert serialized[0] == rosfield_pytype(**pyfield)
+
 
 # Just in case we run this directly
 if __name__ == '__main__':
-    nose.runmodule(__name__)
+    pytest.main([
+        '-s',
+        'test_basic_fields.py::test_field_deserialize_serialize_from_ros_inverse',
+        'test_basic_fields.py::test_field_serialize_deserialize_from_py_inverse',
+    ])
+
