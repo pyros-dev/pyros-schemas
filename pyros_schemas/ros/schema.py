@@ -61,8 +61,11 @@ class RosSchema(marshmallow.Schema):
         """Overloading dump function to transform a dict into a ROS msg from marshmallow"""
         try:
             obj_dict = _get_rosmsg_members_as_dict(obj)  # in case we get something that is not a dict...
-            # because ROS field naming conventions are different than python dict key conventions
-            obj_rosfixed_dict = {k.replace('-', '_'): v for k, v in obj_dict.items()}  # TODO : come up with a generic <ROS_field encode> function
+            if isinstance(obj_dict, dict):  # if we are actually a dict
+                # because ROS field naming conventions are different than python dict key conventions
+                obj_rosfixed_dict = {k.replace('-', '_'): v for k, v in obj_dict.items()}  # TODO : come up with a generic <ROS_field encode> function
+            else:  # can be a list -> do nothing
+                obj_rosfixed_dict = obj_dict
             data_dict, errors = super(RosSchema, self).dump(obj_rosfixed_dict, many=many, update_fields=update_fields, **kwargs)
         except marshmallow.ValidationError as ve:
             raise PyrosSchemasValidationError('ERROR occurred during serialization: {ve}'.format(**locals()))
