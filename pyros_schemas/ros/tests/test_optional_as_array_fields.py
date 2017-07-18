@@ -5,7 +5,6 @@ import pytest
 try:
     import std_msgs.msg as std_msgs
     import genpy
-    import pyros_msgs.msg
 except ImportError:
     # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
     import pyros_setup
@@ -13,7 +12,6 @@ except ImportError:
     pyros_setup.configurable_import().configure().activate()
     import std_msgs.msg as std_msgs
     import genpy
-    import pyros_msgs.msg
 
 import six
 import marshmallow
@@ -44,26 +42,52 @@ from pyros_schemas.ros.types_mapping import (
 
 from . import six_long, maybe_list, proper_basic_optmsg_strategy_selector, proper_basic_optdata_strategy_selector
 
+from . import msg as pyros_schemas_test_msgs
 
 # TODO : make that generic to be able to test any message type...
 # Note : we do not want to test implicit python type conversion here (thats the job of pyros_msgs typechecker)
 #: (schema_field_type, rosfield_pytype, dictfield_pytype)
-pyros_msgs_opttypes_data_schemas_rosopttype_pytype = {
-    'pyros_msgs/test_opt_bool_as_array': (lambda: RosOptAsList(RosBool()), bool, bool),
-    'pyros_msgs/test_opt_int8_as_array': (lambda: RosOptAsList(RosInt8()), int, int),
-    'pyros_msgs/test_opt_int16_as_array': (lambda: RosOptAsList(RosInt16()), int, int),
-    'pyros_msgs/test_opt_int32_as_array': (lambda: RosOptAsList(RosInt32()), int, int),
-    'pyros_msgs/test_opt_int64_as_array': (lambda: RosOptAsList(RosInt64()), six_long, six_long),
-    'pyros_msgs/test_opt_uint8_as_array': (lambda: RosOptAsList(RosUInt8()), int, int),
-    'pyros_msgs/test_opt_uint16_as_array': (lambda: RosOptAsList(RosUInt16()), int, int),
-    'pyros_msgs/test_opt_uint32_as_array': (lambda: RosOptAsList(RosUInt32()), int, int),
-    'pyros_msgs/test_opt_uint64_as_array': (lambda: RosOptAsList(RosUInt64()), six_long, six_long),
-    'pyros_msgs/test_opt_float32_as_array': (lambda: RosOptAsList(RosFloat32()), float, float),
-    'pyros_msgs/test_opt_float64_as_array': (lambda: RosOptAsList(RosFloat64()), float, float),
-    'pyros_msgs/test_opt_string_as_array': [(lambda: RosOptAsList(RosString()), six.binary_type, six.binary_type)],  #, (RosTextString, six.binary_type, six.text_type)],
-    'pyros_msgs/test_opt_time_as_array': [(lambda: RosOptAsList(RosTime()), genpy.Time, six_long)],
-    'pyros_msgs/test_opt_duration_as_array': [(lambda: RosOptAsList(RosDuration()), genpy.Duration, six_long)],
+pyros_schemas_opttypes_data_schemas_rosopttype_pytype = {
+    'optbool': (lambda: RosOptAsList(RosBool()), bool, bool),
+    'optint8': (lambda: RosOptAsList(RosInt8()), int, int),
+    'optint16': (lambda: RosOptAsList(RosInt16()), int, int),
+    'optint32': (lambda: RosOptAsList(RosInt32()), int, int),
+    'optint64': (lambda: RosOptAsList(RosInt64()), six_long, six_long),
+    'optuint8': (lambda: RosOptAsList(RosUInt8()), int, int),
+    'optuint16': (lambda: RosOptAsList(RosUInt16()), int, int),
+    'optuint32': (lambda: RosOptAsList(RosUInt32()), int, int),
+    'optuint64': (lambda: RosOptAsList(RosUInt64()), six_long, six_long),
+    'optfloat32': (lambda: RosOptAsList(RosFloat32()), float, float),
+    'optfloat64': (lambda: RosOptAsList(RosFloat64()), float, float),
+    'optstring': [(lambda: RosOptAsList(RosString()), six.binary_type, six.binary_type)],  #, (RosTextString, six.binary_type, six.text_type)],
+    'opttime': [(lambda: RosOptAsList(RosTime()), genpy.Time, six_long)],
+    'optduration': [(lambda: RosOptAsList(RosDuration()), genpy.Duration, six_long)],
 }
+
+pyros_schemas_opttypes_data_ros_field_types = {
+    'pyros_schemas/test_opt_bool_as_array': (pyros_schemas_test_msgs.test_opt_bool_as_array, 'optbool'),
+    'pyros_schemas/test_opt_int8_as_array': (pyros_schemas_test_msgs.test_opt_int8_as_array, 'optint8'),
+    'pyros_schemas/test_opt_int16_as_array': (pyros_schemas_test_msgs.test_opt_int16_as_array, 'optint16'),
+    'pyros_schemas/test_opt_int32_as_array': (pyros_schemas_test_msgs.test_opt_int32_as_array, 'optint32'),
+    'pyros_schemas/test_opt_int64_as_array': (pyros_schemas_test_msgs.test_opt_int64_as_array, 'optint64'),
+    'pyros_schemas/test_opt_uint8_as_array': (pyros_schemas_test_msgs.test_opt_uint8_as_array, 'optuint8'),
+    'pyros_schemas/test_opt_uint16_as_array': (pyros_schemas_test_msgs.test_opt_uint16_as_array, 'optuint16'),
+    'pyros_schemas/test_opt_uint32_as_array': (pyros_schemas_test_msgs.test_opt_uint32_as_array, 'optuint32'),
+    'pyros_schemas/test_opt_uint64_as_array': (pyros_schemas_test_msgs.test_opt_uint64_as_array, 'optuint64'),
+    'pyros_schemas/test_opt_float32_as_array': (pyros_schemas_test_msgs.test_opt_float32_as_array, 'optfloat32'),
+    'pyros_schemas/test_opt_float64_as_array': (pyros_schemas_test_msgs.test_opt_float64_as_array, 'optfloat64'),
+    'pyros_schemas/test_opt_string_as_array': (pyros_schemas_test_msgs.test_opt_string_as_array, 'optstring'),
+    'pyros_schemas/test_opt_time_as_array': (pyros_schemas_test_msgs.test_opt_time_as_array, 'opttime'),
+    'pyros_schemas/test_opt_duration_as_array': (pyros_schemas_test_msgs.test_opt_duration_as_array, 'optduration'),
+}
+
+
+def rostype_from_rostypestring(rostypestring):
+    return pyros_schemas_opttypes_data_ros_field_types.get(rostypestring)[0]
+
+
+def fieldtypestring_from_rostypestring(rostypestring):
+    return pyros_schemas_opttypes_data_ros_field_types.get(rostypestring)[1]
 
 
 # We need a composite strategy to link slot type and slot value
@@ -77,29 +101,29 @@ def msg_rostype_and_value(draw, msgs_type_strat_tuples):
 
 
 @hypothesis.given(msg_rostype_and_value(proper_basic_optmsg_strategy_selector(
-    'pyros_msgs/test_opt_bool_as_array',
-    'pyros_msgs/test_opt_int8_as_array',
-    'pyros_msgs/test_opt_int16_as_array',
-    'pyros_msgs/test_opt_int32_as_array',
-    'pyros_msgs/test_opt_int64_as_array',
-    'pyros_msgs/test_opt_uint8_as_array',
-    'pyros_msgs/test_opt_uint16_as_array',
-    'pyros_msgs/test_opt_uint32_as_array',
-    'pyros_msgs/test_opt_uint64_as_array',
-    'pyros_msgs/test_opt_float32_as_array',
-    'pyros_msgs/test_opt_float64_as_array',
-    'pyros_msgs/test_opt_string_as_array',
-    'pyros_msgs/test_opt_time_as_array',
-    'pyros_msgs/test_opt_duration_as_array',
+    'pyros_schemas/test_opt_bool_as_array',
+    'pyros_schemas/test_opt_int8_as_array',
+    'pyros_schemas/test_opt_int16_as_array',
+    'pyros_schemas/test_opt_int32_as_array',
+    'pyros_schemas/test_opt_int64_as_array',
+    'pyros_schemas/test_opt_uint8_as_array',
+    'pyros_schemas/test_opt_uint16_as_array',
+    'pyros_schemas/test_opt_uint32_as_array',
+    'pyros_schemas/test_opt_uint64_as_array',
+    'pyros_schemas/test_opt_float32_as_array',
+    'pyros_schemas/test_opt_float64_as_array',
+    'pyros_schemas/test_opt_string_as_array',
+    'pyros_schemas/test_opt_time_as_array',
+    'pyros_schemas/test_opt_duration_as_array',
     #TODO : more of that...
 )))
 @hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
-def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
+def test_optfield_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
 
     # testing all possible schemas for data field
-    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+    for possible_interpretation in maybe_list(pyros_schemas_opttypes_data_schemas_rosopttype_pytype.get(fieldtypestring_from_rostypestring(msg_type))):
         schema_field_type, rosfield_pytype, dictfield_pytype = possible_interpretation
 
         # Schemas' Field constructor
@@ -120,20 +144,20 @@ def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
 
 
 @hypothesis.given(msg_rostype_and_value(proper_basic_optmsg_strategy_selector(
-    # 'pyros_msgs/test_opt_bool_as_array',
-    # 'pyros_msgs/test_opt_int8_as_array',
-    # 'pyros_msgs/test_opt_int16_as_array',
-    # 'pyros_msgs/test_opt_int32_as_array',
-    # 'pyros_msgs/test_opt_int64_as_array',
-    # 'pyros_msgs/test_opt_uint8_as_array',
-    # 'pyros_msgs/test_opt_uint16_as_array',
-    # 'pyros_msgs/test_opt_uint32_as_array',
-    # 'pyros_msgs/test_opt_uint64_as_array',
-    # 'pyros_msgs/test_opt_float32_as_array',
-    # 'pyros_msgs/test_opt_float64_as_array',
-    # 'pyros_msgs/test_opt_string_as_array',
-    'pyros_msgs/test_opt_time_as_array',
-    'pyros_msgs/test_opt_duration_as_array',
+    'pyros_schemas/test_opt_bool_as_array',
+    'pyros_schemas/test_opt_int8_as_array',
+    'pyros_schemas/test_opt_int16_as_array',
+    'pyros_schemas/test_opt_int32_as_array',
+    'pyros_schemas/test_opt_int64_as_array',
+    'pyros_schemas/test_opt_uint8_as_array',
+    'pyros_schemas/test_opt_uint16_as_array',
+    'pyros_schemas/test_opt_uint32_as_array',
+    'pyros_schemas/test_opt_uint64_as_array',
+    'pyros_schemas/test_opt_float32_as_array',
+    'pyros_schemas/test_opt_float64_as_array',
+    'pyros_schemas/test_opt_string_as_array',
+    'pyros_schemas/test_opt_time_as_array',
+    'pyros_schemas/test_opt_duration_as_array',
     #TODO : more of that...
 )))
 @hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
@@ -142,7 +166,7 @@ def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
     msg_value = msg_rostype_and_value[1]
 
     # testing all possible schemas for data field
-    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+    for possible_interpretation in maybe_list(pyros_schemas_opttypes_data_schemas_rosopttype_pytype.get(fieldtypestring_from_rostypestring(msg_type))):
         schema_field_type, rosfield_pytype, dictfield_pytype = possible_interpretation
 
         # Schemas' Field constructor
@@ -161,7 +185,7 @@ def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
             # We need the type conversion to deal with deserialized object in different format than ros data (like string)
             # we also need to deal with slots in case we have complex objects (only one level supported)
             if dictfield_pytype in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
-                if rosfield_pytype == genpy.rostime.Time or rosfield_pytype == genpy.rostime.Duration:  # non verbatim basic fields
+                if rosfield_pytype == genpy.Time or rosfield_pytype == genpy.Duration:  # non verbatim basic fields
                     # TODO : find a way to get rid of this special case...
                     assert deserialized == dictfield_pytype(msg_value.data[0].to_nsec())
                 elif rosfield_pytype == list:  # TODO : improve this check
@@ -175,22 +199,21 @@ def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
                     [(s, getattr(msg_value.data, s)) for s in msg_value.data.__slots__])
 
 
-
 @hypothesis.given(msg_rostype_and_value(proper_basic_optdata_strategy_selector(
-    'pyros_msgs/test_opt_bool_as_array',
-    'pyros_msgs/test_opt_int8_as_array',
-    'pyros_msgs/test_opt_int16_as_array',
-    'pyros_msgs/test_opt_int32_as_array',
-    'pyros_msgs/test_opt_int64_as_array',
-    'pyros_msgs/test_opt_uint8_as_array',
-    'pyros_msgs/test_opt_uint16_as_array',
-    'pyros_msgs/test_opt_uint32_as_array',
-    'pyros_msgs/test_opt_uint64_as_array',
-    'pyros_msgs/test_opt_float32_as_array',
-    'pyros_msgs/test_opt_float64_as_array',
-    'pyros_msgs/test_opt_string_as_array',
-    'pyros_msgs/test_opt_time_as_array',
-    'pyros_msgs/test_opt_duration_as_array',
+    'optbool',
+    'optint8',
+    'optint16',
+    'optint32',
+    'optint64',
+    'optuint8',
+    'optuint16',
+    'optuint32',
+    'optuint64',
+    'optfloat32',
+    'optfloat64',
+    'optstring',
+    'opttime',
+    'optduration',
     #TODO : more of that...
 )))
 @hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
@@ -201,10 +224,10 @@ def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
     pyfield = msg_rostype_and_value[1]
 
     # get actual type from type string
-    rosmsg_type = genpy.message.get_message_class(msg_type)
+    # rosmsg_type = rostype_from_rostypestring(msg_type)
 
     # testing all possible schemas for data field
-    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+    for possible_interpretation in maybe_list(pyros_schemas_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
         schema_field_type, rosfield_pytype, pyfield_pytype = possible_interpretation
 
         # test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfield_pytype):
@@ -215,37 +238,38 @@ def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
         serialized = field.serialize(0, [pyfield])
 
         # Building the ros message in case it changes something...
-        ros_msg = rosmsg_type(data=serialized)
-        deserialized = field.deserialize(ros_msg.data)
+        # ros_msg = rosmsg_type(data=serialized)
+        # deserialized = field.deserialize(ros_msg.data)
+        deserialized = field.deserialize(serialized)
 
         if deserialized != marshmallow.utils.missing:
 
             # Check the dict we obtain is the expected type and same value.
             assert isinstance(deserialized, pyfield_pytype)
-            if pyfield_pytype not in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
-                # If we were missing some fields, we need to initialise to default ROS value to be able to compare
-                for i, s in enumerate(ros_msg.data.__slots__):
-                    if s not in pyfield.keys():
-                        pyfield[s] = ros_pythontype_mapping[ros_msg.data._slot_types[i]]()
+            # if pyfield_pytype not in [bool, int, six_long, float, six.binary_type, six.text_type, list]:
+            #     # If we were missing some fields, we need to initialise to default ROS value to be able to compare
+            #     for i, s in enumerate(ros_msg.data.__slots__):
+            #         if s not in pyfield.keys():
+            #             pyfield[s] = ros_pythontype_mapping[ros_msg.data._slot_types[i]]()
 
             assert deserialized == pyfield
 
+
 @hypothesis.given(msg_rostype_and_value(proper_basic_optdata_strategy_selector(
-    'pyros_msgs/test_opt_bool_as_array',
-    'pyros_msgs/test_opt_int8_as_array',
-    'pyros_msgs/test_opt_int16_as_array',
-    'pyros_msgs/test_opt_int32_as_array',
-    'pyros_msgs/test_opt_int64_as_array',
-    'pyros_msgs/test_opt_uint8_as_array',
-    'pyros_msgs/test_opt_uint16_as_array',
-    'pyros_msgs/test_opt_uint32_as_array',
-    'pyros_msgs/test_opt_uint64_as_array',
-    'pyros_msgs/test_opt_float32_as_array',
-    'pyros_msgs/test_opt_float64_as_array',
-    'pyros_msgs/test_opt_string_as_array',
-    'pyros_msgs/test_opt_time_as_array',
-    'pyros_msgs/test_opt_duration_as_array',
-    # TODO : more of that...
+    'optbool',
+    'optint8',
+    'optint16',
+    'optint32',
+    'optint64',
+    'optuint8',
+    'optuint16',
+    'optuint32',
+    'optuint64',
+    'optfloat32',
+    'optfloat64',
+    'optstring',
+    'opttime',
+    'optduration',
 )))
 @hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_serialize_from_py_to_listtype(msg_rostype_and_value):
@@ -255,13 +279,11 @@ def test_field_serialize_from_py_to_listtype(msg_rostype_and_value):
     pyfield = msg_rostype_and_value[1]
 
     # get actual type from type string
-    rosmsg_type = genpy.message.get_message_class(msg_type)
+    # rosmsg_type = genpy.message.get_message_class(msg_type)
 
     # testing all possible schemas for data field
-    for possible_interpretation in maybe_list(pyros_msgs_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
+    for possible_interpretation in maybe_list(pyros_schemas_opttypes_data_schemas_rosopttype_pytype.get(msg_type)):
         schema_field_type, rosfield_pytype, pyfield_pytype = possible_interpretation
-
-        # test_frompy(pyfield, schema_field_type, rosmsg_type, rosfield_pytype, pyfield_pytype):
 
         # Schemas' Field constructor
         field = schema_field_type()
