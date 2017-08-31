@@ -3,16 +3,7 @@ from __future__ import print_function
 
 import pytest
 
-try:
-    import std_msgs.msg as std_msgs
-    import std_srvs.srv as std_srvs
-except ImportError:
-    # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
-    import pyros_setup
-    # We rely on default configuration to point us to the proper distro
-    pyros_setup.configurable_import().configure().activate()
-    import std_msgs.msg as std_msgs  # TODO
-    import std_srvs.srv as std_srvs
+import std_srvs.srv as std_srvs
 
 # public decorators
 from pyros_schemas.ros import with_service_schemas

@@ -2,18 +2,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import pytest
 
-try:
-    import std_msgs.msg as std_msgs
-    import genpy
-    import pyros_msgs.msg
-except ImportError:
-    # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
-    import pyros_setup
-    # We rely on default configuration to point us to the proper distro
-    pyros_setup.configurable_import().configure().activate()
-    import std_msgs.msg as std_msgs
-    import genpy
-    import pyros_msgs.msg
+import std_msgs.msg as std_msgs
+import genpy
 
 import six
 import marshmallow
