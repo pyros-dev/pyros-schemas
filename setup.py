@@ -206,8 +206,6 @@ setuptools.setup(name='pyros_schemas',
         'pyros_schemas',
         'pyros_schemas.ros',
         'pyros_schemas.ros.schemas',
-        'pyros_schemas.ros.tests',
-        'pyros_schemas.ros.tests.msg',
     ],
     package_data={
         '': ['*.msg', '*.srv']
