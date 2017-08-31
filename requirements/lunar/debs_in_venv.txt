@@ -1,0 +1,14 @@
+# xenial packages versions to validate behavior with these versions for a potential ROS package for pyros-msgs
+pytest==2.8.7
+pytest-xdist==1.8  # for --boxed
+hypothesis==3.0.1
+numpy==1.11.0
+
+# TODO : lock this on lunar
+# ros dependencies (necessary when running tests from install)
+-e git+https://github.com/asmodehn/genmsg.git@setuptools#egg=ros_genmsg
+-e git+https://github.com/asmodehn/genpy.git@setuptools-kinetic#egg=ros_genpy
+
+# source access to latest filefinder and rosimport from git ...
+-e git+https://github.com/asmodehn/filefinder2.git#egg=filefinder2
+-e git+https://github.com/asmodehn/rosimport.git#egg=rosimport

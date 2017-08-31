@@ -1,0 +1,6 @@
+[submodule "tests/std_msgs"]
+	path = tests/std_msgs
+	url = https://github.com/ros/std_msgs.git
+[submodule "tests/ros_comm_msgs"]
+	path = tests/ros_comm_msgs
+	url = https://github.com/ros/ros_comm_msgs.git
