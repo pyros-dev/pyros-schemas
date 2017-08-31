@@ -207,11 +207,16 @@ setuptools.setup(name='pyros_schemas',
         'pyros_schemas.ros',
         'pyros_schemas.ros.schemas',
         'pyros_schemas.ros.tests',
+        'pyros_schemas.ros.tests.msg',
     ],
+    package_data={
+        '': ['*.msg', '*.srv']
+    },
     # this is better than using package data ( since behavior is a bit different from distutils... )
     include_package_data=True,  # use MANIFEST.in during install.
     # Reference for optional dependencies : http://stackoverflow.com/questions/4796936/does-pip-handle-extras-requires-from-setuptools-distribute-based-sources
     install_requires=[
+        'pyros-msgs',
         # this is needed as install dependency since we embed tests in the package.
         'pyros_setup>=0.2.1',  # needed to grab ros environment even if distro setup.sh not sourced
         'six>=1.5.2',

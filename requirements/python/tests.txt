@@ -3,3 +3,7 @@ pytest
 pytest-xdist  # for --boxed
 hypothesis
 numpy
+
+# These dependencies are python pkgs only and only for tests.
+filefinder2
+rosimport

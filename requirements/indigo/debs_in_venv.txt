@@ -8,8 +8,12 @@ numpy>=1.8.1
 # ros dependencies (necessary when running tests from install)
 -e git+https://github.com/asmodehn/genmsg.git@setuptools#egg=ros_genmsg
 -e git+https://github.com/asmodehn/genpy.git@setuptools#egg=ros_genpy
+-e git+https://github.com/asmodehn/ros.git@setuptools#egg=ros_roslib&subdirectory=core/roslib
+-e git+https://github.com/asmodehn/catkin.git@setuptools#egg=ros_catkin
 
-# source access to latest filefinder and rosimport from git ...
--e git+https://github.com/asmodehn/filefinder2.git#egg=filefinder2
--e git+https://github.com/asmodehn/rosimport.git#egg=rosimport
+-e git+https://github.com/pyros-dev/pyros-msgs.git@nested_implement#egg=pyros_msgs
+
+# These dependencies are python pkgs only and only for tests.
+filefinder2
+rosimport
 
