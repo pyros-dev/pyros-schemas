@@ -1,19 +1,9 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
-try:
-    import std_msgs.msg as std_msgs
-#    import pyros_msgs.msg as pyros_msgs
-except ImportError:
-    # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
-    import pyros_setup
-    # We rely on default configuration to point us ot the proper distro
-    pyros_setup.configurable_import().configure().activate()
-    import std_msgs.msg as std_msgs
+import std_msgs.msg as std_msgs
 #    import pyros_msgs.msg as pyros_msgs
 
-
-import nose
+import pytest
 import marshmallow
 
 # absolute import ros field types
@@ -32,55 +22,53 @@ from pyros_schemas.ros import (
 )
 
 
-@nose.tools.nottest
-def gen_rosmsg_test(schemaType, ros_msg, py_inst_expected):
+def gen_rosmsg(schemaType, ros_msg, py_inst_expected):
     schema = schemaType()
 
-    marshalled, errors = schema.dump(ros_msg)
+    marshalled, errors = schema.load(ros_msg)
     assert not errors and marshalled == py_inst_expected
 
-    value, errors = schema.load(marshalled)
+    value, errors = schema.dump(marshalled)
     assert not errors and type(value) == type(ros_msg) and value == ros_msg
 
 
-@nose.tools.nottest
-def gen_pymsg_test(schemaType, ros_msg_expected, py_inst):
+def gen_pymsg(schemaType, ros_msg_expected, py_inst):
 
     schema = schemaType()
 
-    unmarshalled, errors = schema.load(py_inst)
+    unmarshalled, errors = schema.dump(py_inst)
     assert not errors and type(unmarshalled) == type(ros_msg_expected) and unmarshalled == ros_msg_expected
 
-    obj, errors = schema.dump(unmarshalled)
+    obj, errors = schema.load(unmarshalled)
     assert not errors and type(obj) == type(py_inst) and obj == py_inst
 
 
 def test_msgbool_ros():
-    yield gen_rosmsg_test, RosMsgBool, std_msgs.Bool(data=True), {'data': True}
-    yield gen_rosmsg_test, RosMsgBool, std_msgs.Bool(data=False), {'data': False}
+    yield gen_rosmsg, RosMsgBool, std_msgs.Bool(data=True), {'data': True}
+    yield gen_rosmsg, RosMsgBool, std_msgs.Bool(data=False), {'data': False}
 
 
 def test_msgbool_py():
-    yield gen_pymsg_test, RosMsgBool, std_msgs.Bool(data=True), {'data': True}
-    yield gen_pymsg_test, RosMsgBool, std_msgs.Bool(data=False), {'data': False}
+    yield gen_pymsg, RosMsgBool, std_msgs.Bool(data=True), {'data': True}
+    yield gen_pymsg, RosMsgBool, std_msgs.Bool(data=False), {'data': False}
 
 
 def test_msgint8_ros():
-    yield gen_rosmsg_test, RosMsgInt8, std_msgs.Int8(data=42), {'data': 42}
+    yield gen_rosmsg, RosMsgInt8, std_msgs.Int8(data=42), {'data': 42}
 
 
 def test_msgint8_py():
-    yield gen_pymsg_test, RosMsgInt8, std_msgs.Int8(data=42), {'data': 42}
+    yield gen_pymsg, RosMsgInt8, std_msgs.Int8(data=42), {'data': 42}
 
 # TODO : test other ints
 
 
 def test_msgstring_ros():
-    yield gen_rosmsg_test, RosMsgString, std_msgs.String(data='fortytwo'), {'data': u'fortytwo'}
+    yield gen_rosmsg, RosMsgString, std_msgs.String(data='fortytwo'), {'data': u'fortytwo'}
 
 
 def test_msgstring_py():
-    yield gen_pymsg_test, RosMsgString, std_msgs.String(data='fortytwo'), {'data': u'fortytwo'}
+    yield gen_pymsg, RosMsgString, std_msgs.String(data='fortytwo'), {'data': u'fortytwo'}
 
 
 #
@@ -154,5 +142,6 @@ def test_msgstring_py():
 
 # Just in case we run this directly
 if __name__ == '__main__':
-    import nose
-    nose.runmodule(__name__)
+    pytest.main([
+        '-s', __file__,
+    ])

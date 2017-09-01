@@ -86,7 +86,7 @@ def fieldtypestring_from_rostypestring(rostypestring):
 
 # We need a composite strategy to link slot type and slot value
 @st.composite
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose, timeout=1)
+@hypothesis.settings(timeout=1)
 def msg_rostype_and_value(draw, msgs_type_strat_tuples):
     msg_type_strat = draw(st.sampled_from(msgs_type_strat_tuples))
     # print(msg_type_strat[1])  # just in case, to help debugging strategies
@@ -111,7 +111,6 @@ def msg_rostype_and_value(draw, msgs_type_strat_tuples):
     'pyros_schemas/test_opt_duration_as_array',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_optfield_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
@@ -154,7 +153,6 @@ def test_optfield_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     'pyros_schemas/test_opt_duration_as_array',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
@@ -211,7 +209,6 @@ def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
     'optduration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
     # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
     # Same values as for ros message test
@@ -266,7 +263,6 @@ def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
     'opttime',
     'optduration',
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_serialize_from_py_to_listtype(msg_rostype_and_value):
     # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
     # Same values as for ros message test

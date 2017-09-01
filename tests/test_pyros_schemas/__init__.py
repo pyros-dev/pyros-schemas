@@ -43,6 +43,23 @@ import six
 six_long = six.integer_types[-1]
 
 
+if hasattr(hypothesis, 'HealthCheck'):
+    hypothesis.settings.register_profile("travis", hypothesis.settings(
+        suppress_health_check=hypothesis.HealthCheck.too_slow
+    ))
+else:
+    hypothesis.settings.register_profile("travis", hypothesis.settings(
+        # default
+    ))
+
+hypothesis.settings.register_profile("dev", hypothesis.settings(
+    verbosity=hypothesis.Verbosity.verbose,
+))
+
+# default settings
+hypothesis.settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'dev'))
+
+
 def maybe_list(l):
     """Return list of one element if ``l`` is a scalar."""
     return l if l is None or isinstance(l, list) else [l]

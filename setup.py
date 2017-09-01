@@ -214,14 +214,15 @@ setuptools.setup(name='pyros_schemas',
     include_package_data=True,  # use MANIFEST.in during install.
     # Reference for optional dependencies : http://stackoverflow.com/questions/4796936/does-pip-handle-extras-requires-from-setuptools-distribute-based-sources
     install_requires=[
-        'pyros-msgs',
+        'pyros-msgs>=0.1.1',
         # this is needed as install dependency since we embed tests in the package.
-        'pyros_setup>=0.2.1',  # needed to grab ros environment even if distro setup.sh not sourced
         'six>=1.5.2',
+        'marshmallow>=2.9.1',
+    ],
+    test_requires=[
         'pytest>=2.8.0',  # as per hypothesis requirement (careful with 2.5.1 on trusty)
         'hypothesis>=3.0.1',  # to target xenial LTS version
         'numpy>=1.8.2',  # from trusty version
-        'marshmallow>=2.9.1',
     ],
     cmdclass={
         'rosdevelop': RosDevelopCommand,
