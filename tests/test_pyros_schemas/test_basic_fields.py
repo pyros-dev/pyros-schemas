@@ -2,18 +2,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import pytest
 
-try:
-    import std_msgs.msg as std_msgs
-    import genpy
-    import pyros_msgs.msg
-except ImportError:
-    # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
-    import pyros_setup
-    # We rely on default configuration to point us to the proper distro
-    pyros_setup.configurable_import().configure().activate()
-    import std_msgs.msg as std_msgs
-    import genpy
-    import pyros_msgs.msg
+import std_msgs.msg as std_msgs
+import genpy
 
 import six
 import marshmallow
@@ -118,7 +108,6 @@ def fieldtype_and_value(draw, field_type_strat_tuples):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
@@ -159,7 +148,6 @@ def test_field_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_deserialize_from_ros_to_type(msg_rostype_and_value):
     msg_type = msg_rostype_and_value[0]
     msg_value = msg_rostype_and_value[1]
@@ -210,7 +198,6 @@ def test_field_deserialize_from_ros_to_type(msg_rostype_and_value):
     'duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
     # TODO : make it clearer that we get different data here, even if we still use msg_rostype_and_value
     # Same values as for ros message test
@@ -254,7 +241,6 @@ def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
     'duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_field_serialize_from_py_to_type(msg_rostype_and_value):
     # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
     # Same values as for ros message test

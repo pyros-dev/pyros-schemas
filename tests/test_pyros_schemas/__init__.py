@@ -1,20 +1,20 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-try:
-    import std_msgs.msg as std_msgs
-    import genpy
-    import pyros_msgs.opt_as_array
-except ImportError:
-    # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
-    import pyros_setup
-    # We rely on default configuration to point us to the proper distro
-    pyros_setup.configurable_import().configure().activate()
-    import std_msgs.msg as std_msgs
-    import genpy
-    import pyros_msgs.opt_as_array
+import os
+import site
+
+added_site_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'rosdeps')
+srvs_site_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'rosdeps', 'ros_comm_msgs')
+print("Adding site directory {0} to access std_msgs".format(added_site_dir))
+site.addsitedir(added_site_dir)
+site.addsitedir(srvs_site_dir)
 
 import rosimport
 rosimport.activate()
+
+import std_msgs.msg as std_msgs
+import genpy
+import pyros_msgs.opt_as_array
 
 from . import msg as pyros_schemas_test_msgs
 

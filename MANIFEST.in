@@ -1,0 +1,7 @@
+# default
+include README.rst
+include setup.py
+
+# including tests in sdist
+recursive-include tests *
+recursive-exclude tests/.hypothesis *

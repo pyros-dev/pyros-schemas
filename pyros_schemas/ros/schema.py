@@ -22,8 +22,6 @@ from .optional_fields import (
 
 from .utils import _get_rosmsg_members_as_dict
 
-import roslib
-
 # Statically proxying marshmallow useful decorators for methods
 pre_load = marshmallow.pre_load
 post_load = marshmallow.post_load

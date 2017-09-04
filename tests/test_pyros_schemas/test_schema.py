@@ -1,16 +1,4 @@
-from __future__ import absolute_import
-from __future__ import print_function
-
-try:
-    import rospy
-    import std_msgs.msg as std_msgs
-except ImportError:
-    # Because we need to access Ros message types here (from ROS env or from virtualenv, or from somewhere else)
-    import pyros_setup
-    # We rely on default configuration to point us ot the proper distro
-    pyros_setup.configurable_import().configure().activate()
-    import rospy
-    import std_msgs.msg as std_msgs
+from __future__ import absolute_import, print_function
 
 import pytest
 
@@ -30,7 +18,6 @@ import hypothesis.strategies as st
 
 # We need a composite strategy to link msg type and dict structure
 @st.composite
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def msg_rostype_and_dict(draw, msgs_type_strat_tuples):
     msg_type_strat = draw(st.sampled_from(msgs_type_strat_tuples))
     msg_value = draw(msg_type_strat[1])
@@ -55,7 +42,6 @@ def msg_rostype_and_dict(draw, msgs_type_strat_tuples):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_schema_load_dump_fromros_inverse(msg_rostype_value_and_dict):
     msg_rostype = msg_rostype_value_and_dict[0]  # just for info/debug purposes
     ros_msg = msg_rostype_value_and_dict[1]
@@ -73,7 +59,6 @@ def test_schema_load_dump_fromros_inverse(msg_rostype_value_and_dict):
 
 # We need a composite strategy to link msg type and dict structure
 @st.composite
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def msg_dict_and_rostype(draw, msgs_dict_strat_tuples):
     msg_dict_strat = draw(st.sampled_from(msgs_dict_strat_tuples))
     msg_dict = draw(msg_dict_strat[1])
@@ -98,7 +83,6 @@ def msg_dict_and_rostype(draw, msgs_dict_strat_tuples):
     'std_msgs/Duration',
     #TODO : more of that...
 )))
-@hypothesis.settings(verbosity=hypothesis.Verbosity.verbose)
 def test_schema_dump_load_frompy_inverse(msg_rostype_dict_and_value):
     msg_rostype = msg_rostype_dict_and_value[0]  # just for info/debug purposes
     py_inst = msg_rostype_dict_and_value[1]
