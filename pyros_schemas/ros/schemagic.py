@@ -98,6 +98,7 @@ def create(ros_msg_class,
     members['_valid_ros_msgtype'] = ros_msg_class
     members['_generated_ros_msgtype'] = ros_msg_class
 
+    # occur memory leak, I'm wating your opinion please.
     MsgSchema = type(ros_msg_class.__name__ + 'Schema', (RosSchema,), members)
 
     # Generating the schema instance
