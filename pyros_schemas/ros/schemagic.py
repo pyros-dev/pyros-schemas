@@ -51,6 +51,7 @@ def create(ros_msg_class,
 
     members_types = _get_rosmsg_fields_as_dict(ros_msg_class)
     members = {}
+    schema_instance = RosSchema()
     for s, stype in members_types.iteritems():
         # Note here we rely entirely on _opt_slots from the class to be set properly
         # for both Nested or List representation of optional fields
@@ -80,28 +81,24 @@ def create(ros_msg_class,
                     ros_schema_inst = RosNested(create(stype))  # we need to nest the next (Ros)Schema
 
         members.setdefault(s, ros_schema_inst)
+        schema_instance.declared_fields[s] = ros_schema_inst
+        schema_instance.fields[s] = ros_schema_inst
 
     # supporting extra customization of the serialization
     if pre_load_fun:
-        members['_helper_pre_load'] = pre_load(pre_load_fun)
+        schema_instance.declared_fields['_helper_pre_load'] = pre_load(pre_load_fun)
     if post_load_fun:
-        members['_helper_post_load'] = post_load(post_load_fun)
+        schema_instance.declared_fields['_helper_post_load'] = post_load(post_load_fun)
     if pre_dump_fun:
-        members['_helper_pre_dump'] = pre_dump(pre_dump_fun)
+        schema_instance.declared_fields['_helper_pre_dump'] = pre_dump(pre_dump_fun)
     if post_dump_fun:
-        members['_helper_post_dump'] = post_dump(post_dump_fun)
+        schema_instance.declared_fields['_helper_post_dump'] = post_dump(post_dump_fun)
 
     # adding extra members if needed
     for k, v in kwargs:
-        members[k] = v
+        schema_instance.declared_fields[k] = v
 
-    members['_valid_ros_msgtype'] = ros_msg_class
-    members['_generated_ros_msgtype'] = ros_msg_class
-
-    MsgSchema = type(ros_msg_class.__name__ + 'Schema', (RosSchema,), members)
-
-    # Generating the schema instance
-    # TODO : nicer way ?
-    schema_instance = MsgSchema()
+    schema_instance._valid_ros_msgtype = ros_msg_class
+    schema_instance._generated_ros_msgtype = ros_msg_class
 
     return schema_instance
