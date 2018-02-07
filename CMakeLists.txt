@@ -25,7 +25,7 @@ catkin_pip_package(pyros_schemas)
 #######
 
 if (CATKIN_ENABLE_TESTING)
-  catkin_add_pytests(pyros_schemas/ros/tests)
+  catkin_add_pytests(tests/test_pyros_schemas)
 endif()
 
 
