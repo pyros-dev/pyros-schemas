@@ -13,8 +13,8 @@ ROS
 
 -  serializes everything as a dict, flatten base field types if possible.
 
-.. |Build Status| image:: https://travis-ci.org/asmodehn/pyros-schemas.svg?branch=master
-   :target: https://travis-ci.org/asmodehn/pyros-schemas
+.. |Build Status| image:: https://travis-ci.org/pyros-dev/pyros-schemas.svg?branch=master
+   :target: https://travis-ci.org/pyros-dev/pyros-schemas
 
 
 Testing
