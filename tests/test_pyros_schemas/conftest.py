@@ -5,9 +5,9 @@ import pytest
 import hypothesis
 
 
-if hasattr(hypothesis, 'HealthCheck'):
+if hasattr(hypothesis, 'HealthCheck') and hasattr(hypothesis.HealthCheck, 'too_slow'):
     hypothesis.settings.register_profile("travis", hypothesis.settings(
-        suppress_health_check=getattr(hypothesis.HealthCheck, 'too_slow')
+        suppress_health_check=[getattr(hypothesis.HealthCheck, 'too_slow')]
     ))
 else:
     hypothesis.settings.register_profile("travis", hypothesis.settings(
