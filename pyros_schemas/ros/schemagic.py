@@ -51,7 +51,7 @@ def create(ros_msg_class,
 
     members_types = _get_rosmsg_fields_as_dict(ros_msg_class)
     members = {}
-    for s, stype in members_types.iteritems():
+    for s, stype in six.iteritems(members_types):
         # Note here we rely entirely on _opt_slots from the class to be set properly
         # for both Nested or List representation of optional fields
         ros_schema_inst = None
