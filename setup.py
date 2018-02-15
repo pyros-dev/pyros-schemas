@@ -120,7 +120,7 @@ class RosDevelopCommand(setuptools.Command):
         repo_path = tempfile.mkdtemp(prefix='rosdevelop-' + os.path.dirname(__file__))  # TODO get actual package name ?
         print("Getting ROS release repo in {0}...".format(repo_path))
         # TODO : get release repo from ROSdistro
-        rosrelease_repo = git.Repo.clone_from('https://github.com/asmodehn/pyros-msgs-rosrelease.git', repo_path)
+        rosrelease_repo = git.Repo.clone_from('https://github.com/asmodehn/pyros-schemas-rosrelease.git', repo_path)
 
         # Reset our working tree to master
         origin = rosrelease_repo.remotes.origin
@@ -174,7 +174,7 @@ class RosDevelopCommand(setuptools.Command):
 
 class ROSPublishCommand(setuptools.Command):
     """Command to release this package to Pypi"""
-    description = "releases pyros-msgs to ROS"
+    description = "releases pyros-schemas to ROS"
     user_options = []
 
     def initialize_options(self):
@@ -214,7 +214,7 @@ setuptools.setup(name='pyros_schemas',
     include_package_data=True,  # use MANIFEST.in during install.
     # Reference for optional dependencies : http://stackoverflow.com/questions/4796936/does-pip-handle-extras-requires-from-setuptools-distribute-based-sources
     install_requires=[
-        'pyros-msgs>=0.1.1',
+        'pyros-msgs>=0.2.0',
         # this is needed as install dependency since we embed tests in the package.
         'six>=1.5.2',
         'marshmallow>=2.9.1',
@@ -225,6 +225,8 @@ setuptools.setup(name='pyros_schemas',
         'numpy>=1.8.2',  # from trusty version
     ],
     cmdclass={
+        'prepare_release': PrepareReleaseCommand,
+        'publish': PublishCommand,
         'rosdevelop': RosDevelopCommand,
         'rospublish': ROSPublishCommand,
     },

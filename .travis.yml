@@ -26,10 +26,10 @@ python:
 matrix:
   include:
     # explicitely matching python version to the version on the ubuntu distro supported by the ROS LTS distro
-    #TODO - python: 3.4
-    #  env: ROS_DISTRO=indigo
-    #TODO - python: 3.5
-    #  env: ROS_DISTRO=kinetic
+    - python: 3.4
+      env: ROS_DISTRO=indigo
+    - python: 3.5
+      env: ROS_DISTRO=kinetic
   exclude:
     # explicitely exclude python3 version not supported by matching linux distro
     - python: 3.6
