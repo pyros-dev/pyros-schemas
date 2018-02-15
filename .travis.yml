@@ -7,18 +7,18 @@ branches:
 env:
   # These will be used to determine the proper version of our dependencies
   # We will NOT rely on a full ROS installation.
-  - ROS_DISTRO=indigo
-  - ROS_DISTRO=kinetic
+  - ROS_DISTRO=indigo TOX_PARAMS=
+  - ROS_DISTRO=kinetic TOX_PARAMS=--hypothesis-profile travis
   # Latest not LTS
-  - ROS_DISTRO=lunar
+  - ROS_DISTRO=lunar TOX_PARAMS=--hypothesis-profile travis
   # to get latest dependencies (not released in a ROS distro yet)
-  - ROS_DISTRO=latest
+  - ROS_DISTRO=latest TOX_PARAMS=--hypothesis-profile travis
 
 python:
   # always test python2 (default supported python version for ROS1)
   - 2.7
   # always test latest python3 (to guarantee recent python support)
-  #TODO - 3.6
+  - 3.6
   #- pypy
   #- pypy3
 
@@ -44,7 +44,7 @@ install:
   - pip install tox tox-travis
 
 script:
-  - tox -- --hypothesis-profile travis
+  - tox -- $TOX_PARAMS
 
 notifications:
   email: false
