@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import six
 
 """
 Defining marshmallow fields for ROS message fields
@@ -122,13 +123,29 @@ class RosUInt32(marshmallow.fields.Integer):
         super(RosUInt32, self).__init__(*args, **kwargs)
 
 
-class RosInt64(marshmallow.fields.Integer):
+# We need to introduce some python 2 / 3 compatibiilty for long
+six_long = six.integer_types[-1]
+
+
+class RosInt64(marshmallow.fields.Number):
+    # Inspired from Marshmallow Integer field implementation
+    num_type = six_long
+    default_error_messages = {
+        'invalid': 'Not a valid long integer.'
+    }
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('required', True)   # setting required to true by default
         super(RosInt64, self).__init__(*args, **kwargs)
 
 
 class RosUInt64(marshmallow.fields.Integer):
+    # Inspired from Marshmallow Integer field implementation
+    num_type = six_long
+    default_error_messages = {
+        'invalid': 'Not a valid long integer.'
+    }
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('required', True)  # setting required to true by default
         super(RosUInt64, self).__init__(*args, **kwargs)
@@ -212,6 +229,60 @@ class RosTextString(RosString):
         return marshmallow.utils.ensure_text_type(value)
 
 
+class RosTime(marshmallow.fields.Integer):
+    """
+    A ros time, serialized into a long int.
+    We avoid float precision issues (since we want exact equality between serialized and deserialized values).
+    Since 4294967295 < 9223372036854775807 / 1e9, our representation of the time with a long nsec value is valid
+    """
+
+    default_error_messages = {
+        'invalid': 'Not a valid time.'
+    }
+
+    def _serialize(self, value, attr, obj):
+        # CAREFUL : genpy version has slots, rospy version doesnt...
+        # since genpy has crappy algo :
+        s = value // 1000000000
+        ns = value - s * 1000000000
+        return genpy.Time(secs=s, nsecs=ns)  # this will be "canonized" by genpy to fit message type
+
+    def _deserialize(self, value, attr, obj):
+        # we need to be careful here, we cannot use the fields directly,
+        # and we need to use the proper method to have the desired meaningful data
+        return six_long(value.to_nsec())
+
+
+class RosDuration(marshmallow.fields.Integer):
+    """
+    A ros duration, serialized into a long int.
+    We avoid float precision issues (since we want exact equality between serialized and deserialized values).
+    Since 4294967295 < 9223372036854775807 / 1e9, our representation of the time with a long nsec value is valid
+    """
+    default_error_messages = {
+        'invalid': 'Not a valid duration.'
+    }
+
+    def _serialize(self, value, attr, obj):
+        # CAREFUL : genpy version has slots, rospy version doesnt...
+        # since genpy has crappy algo :
+        s = value // 1000000000
+        ns = value - s * 1000000000
+        return genpy.Duration(secs=s, nsecs=ns)  # this will be "canonized" by genpy to fit message type
+
+    def _deserialize(self, value, attr, obj):
+        # we need to be careful here, we cannot use the fields directly,
+        # and we need to use the proper method to have the desired meaningful data
+        return six_long(value.to_nsec())
+
+
+# CAREFUL with RosList : Ros works differently with lists...
+class RosList(marshmallow.fields.List):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('required', True)  # setting required to true by default
+        super(RosList, self).__init__(*args, **kwargs)
+
+
 # CAREFUL with RosNested : Ros works differently with nesting...
 # Check RosTime and Rosduration for example of how to use it
 class RosNested(marshmallow.fields.Nested):
@@ -240,9 +311,3 @@ class RosNested(marshmallow.fields.Nested):
 
         return super(RosNested, self)._deserialize(value, attr, obj)
 
-
-# CAREFUL with RosList : Ros works differently with lists...
-class RosList(marshmallow.fields.List):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('required', True)   # setting required to true by default
-        super(RosList, self).__init__(*args, **kwargs)

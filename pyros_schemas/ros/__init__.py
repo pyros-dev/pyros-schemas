@@ -9,6 +9,8 @@ from .basic_fields import (
     RosFloat32, RosFloat64,
     RosString,
     RosTextString,
+    RosTime,
+    RosDuration,
     RosNested,
     RosList,
 )
@@ -25,11 +27,13 @@ from .schemas import (
     RosMsgString,
 )
 
-from .time_fields import (
-    RosTime, RosTimeVerbatim,
-    RosDuration, RosDurationVerbatim,
-)
+# from .time_fields import (
+#     # RosTime,
+#     RosDuration,
+# )
 
 from .schemagic import create
 
 from .decorators import with_service_schemas  # useful for direct import even if not included in __all__
+
+from .types_mapping import ros_msgtype_mapping, ros_pythontype_mapping
