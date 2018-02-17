@@ -5,7 +5,7 @@ import pytest
 import std_msgs.msg as std_msgs
 import genpy
 
-
+import sys
 import six
 import marshmallow
 import hypothesis
@@ -28,14 +28,14 @@ from pyros_schemas.ros.optional_fields import (
 )
 
 
-from pyros_schemas.ros.types_mapping import (
-    ros_msgtype_mapping,
-    ros_pythontype_mapping
-)
+# Some tests are still failing on python3, related to strings. see https://github.com/ros/genpy/pull/85 and https://github.com/ros/genpy/pull/90 for related discussion
+# also https://discourse.ros.org/t/python3-and-strings/2392
 
-from . import six_long, maybe_list, proper_basic_optmsg_strategy_selector, proper_basic_optdata_strategy_selector
+from . import six_long, maybe_list
 
 from . import msg as pyros_schemas_test_msgs
+
+from .strategies.ros import pyros_schemas_opttypes_strat_ok
 
 # TODO : make that generic to be able to test any message type...
 # Note : we do not want to test implicit python type conversion here (thats the job of pyros_msgs typechecker)
@@ -54,9 +54,15 @@ pyros_schemas_opttypes_data_schemas_rosopttype_pytype = {
     'optfloat64': (lambda: RosOptAsList(RosFloat64()), float, float),
 #    'optstring': [(lambda: RosOptAsList(RosString()), six.binary_type, six.binary_type)], # , (RosTextString, six.binary_type, six.text_type)],
     'optstring': [(lambda: RosOptAsList(RosTextString()), six.binary_type, six.text_type)],  # Note the ambiguity of str for py2/py3
+
     'opttime': [(lambda: RosOptAsList(RosTime()), genpy.Time, six_long)],
     'optduration': [(lambda: RosOptAsList(RosDuration()), genpy.Duration, six_long)],
 }
+
+
+# if sys.version_info < (3,0):
+#     pyros_schemas_opttypes_data_schemas_rosopttype_pytype['optstring']= [(lambda: RosOptAsList(RosTextString()), six.binary_type, six.binary_type)]
+
 
 pyros_schemas_opttypes_data_ros_field_types = {
     'pyros_schemas/test_opt_bool_as_array': (pyros_schemas_test_msgs.test_opt_bool_as_array, 'optbool'),
@@ -94,26 +100,7 @@ def msg_rostype_and_value(draw, msgs_type_strat_tuples):
     return msg_type_strat[0], msg_value
 
 
-@hypothesis.given(msg_rostype_and_value(proper_basic_optmsg_strategy_selector(
-    'pyros_schemas/test_opt_bool_as_array',
-    'pyros_schemas/test_opt_int8_as_array',
-    'pyros_schemas/test_opt_int16_as_array',
-    'pyros_schemas/test_opt_int32_as_array',
-    'pyros_schemas/test_opt_int64_as_array',
-    'pyros_schemas/test_opt_uint8_as_array',
-    'pyros_schemas/test_opt_uint16_as_array',
-    'pyros_schemas/test_opt_uint32_as_array',
-    'pyros_schemas/test_opt_uint64_as_array',
-    'pyros_schemas/test_opt_float32_as_array',
-    'pyros_schemas/test_opt_float64_as_array',
-    'pyros_schemas/test_opt_string_as_array',
-    'pyros_schemas/test_opt_time_as_array',
-    'pyros_schemas/test_opt_duration_as_array',
-    #TODO : more of that...
-)))
-def test_optfield_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
-    msg_type = msg_rostype_and_value[0]
-    msg_value = msg_rostype_and_value[1]
+def optfield_deserialize_serialize_from_ros_inverse(msg_type, msg_value):
 
     # testing all possible schemas for data field
     for possible_interpretation in maybe_list(pyros_schemas_opttypes_data_schemas_rosopttype_pytype.get(fieldtypestring_from_rostypestring(msg_type))):
@@ -136,26 +123,72 @@ def test_optfield_deserialize_serialize_from_ros_inverse(msg_rostype_and_value):
             assert serialized == msg_value.data
 
 
-@hypothesis.given(msg_rostype_and_value(proper_basic_optmsg_strategy_selector(
-    'pyros_schemas/test_opt_bool_as_array',
-    'pyros_schemas/test_opt_int8_as_array',
-    'pyros_schemas/test_opt_int16_as_array',
-    'pyros_schemas/test_opt_int32_as_array',
-    'pyros_schemas/test_opt_int64_as_array',
-    'pyros_schemas/test_opt_uint8_as_array',
-    'pyros_schemas/test_opt_uint16_as_array',
-    'pyros_schemas/test_opt_uint32_as_array',
-    'pyros_schemas/test_opt_uint64_as_array',
-    'pyros_schemas/test_opt_float32_as_array',
-    'pyros_schemas/test_opt_float64_as_array',
-    'pyros_schemas/test_opt_string_as_array',
-    'pyros_schemas/test_opt_time_as_array',
-    'pyros_schemas/test_opt_duration_as_array',
-    #TODO : more of that...
-)))
-def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
-    msg_type = msg_rostype_and_value[0]
-    msg_value = msg_rostype_and_value[1]
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_bool_as_array'))
+def test_bool_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_bool_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int8_as_array'))
+def test_int8_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_int8_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int16_as_array'))
+def test_int16_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_int16_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int32_as_array'))
+def test_int32_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_int32_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int64_as_array'))
+def test_int64_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_int64_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint8_as_array'))
+def test_uint8_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_uint8_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint16_as_array'))
+def test_uint16_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_uint16_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint32_as_array'))
+def test_uint32_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_uint32_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint64_as_array'))
+def test_uint64_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_uint64_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_float32_as_array'))
+def test_float32_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_float32_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_float64_as_array'))
+def test_float64_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_float64_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_string_as_array'))
+def test_string_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_string_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_time_as_array'))
+def test_time_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_time_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_duration_as_array'))
+def test_duration_optfield_deserialize_serialize_from_ros_inverse(msg_value):
+    return optfield_deserialize_serialize_from_ros_inverse('pyros_schemas/test_opt_duration_as_array', msg_value)
+
+
+def optfield_deserialize_from_ros_to_type_in_list(msg_type, msg_value):
 
     # testing all possible schemas for data field
     for possible_interpretation in maybe_list(pyros_schemas_opttypes_data_schemas_rosopttype_pytype.get(fieldtypestring_from_rostypestring(msg_type))):
@@ -192,29 +225,72 @@ def test_optfield_deserialize_from_ros_to_type_in_list(msg_rostype_and_value):
                     [(s, getattr(msg_value.data, s)) for s in msg_value.data.__slots__])
 
 
-@hypothesis.given(msg_rostype_and_value(proper_basic_optdata_strategy_selector(
-    'optbool',
-    'optint8',
-    'optint16',
-    'optint32',
-    'optint64',
-    'optuint8',
-    'optuint16',
-    'optuint32',
-    'optuint64',
-    'optfloat32',
-    'optfloat64',
-    'optstring',
-    'opttime',
-    'optduration',
-    #TODO : more of that...
-)))
-def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
-    # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
-    # Same values as for ros message test
-    msg_type = msg_rostype_and_value[0]
-    pyfield = msg_rostype_and_value[1]
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_bool_as_array'))
+def test_bool_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_bool_as_array', msg_value)
 
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int8_as_array'))
+def test_int8_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_int8_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int16_as_array'))
+def test_int16_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_int16_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int32_as_array'))
+def test_int32_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_int32_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_int64_as_array'))
+def test_int64_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_int64_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint8_as_array'))
+def test_uint8_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_uint8_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint16_as_array'))
+def test_uint16_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_uint16_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint32_as_array'))
+def test_uint32_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_uint32_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_uint64_as_array'))
+def test_uint64_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_uint64_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_float32_as_array'))
+def test_float32_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_float32_as_array', msg_value)
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_float64_as_array'))
+def test_float64_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_float64_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_string_as_array'))
+def test_string_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_string_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_time_as_array'))
+def test_time_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_time_as_array', msg_value)
+
+
+@hypothesis.given(pyros_schemas_opttypes_strat_ok.get('pyros_schemas/test_opt_duration_as_array'))
+def test_duration_optfield_deserialize_from_ros_to_type_in_list(msg_value):
+    return optfield_deserialize_from_ros_to_type_in_list('pyros_schemas/test_opt_duration_as_array', msg_value)
+
+
+def optfield_serialize_deserialize_from_py_inverse(msg_type, pyfield):
     # get actual type from type string
     # rosmsg_type = rostype_from_rostypestring(msg_type)
 
@@ -247,27 +323,73 @@ def test_field_serialize_deserialize_from_py_inverse(msg_rostype_and_value):
             assert deserialized == pyfield
 
 
-@hypothesis.given(msg_rostype_and_value(proper_basic_optdata_strategy_selector(
-    'optbool',
-    'optint8',
-    'optint16',
-    'optint32',
-    'optint64',
-    'optuint8',
-    'optuint16',
-    'optuint32',
-    'optuint64',
-    'optfloat32',
-    'optfloat64',
-    'optstring',
-    'opttime',
-    'optduration',
-)))
-def test_field_serialize_from_py_to_listtype(msg_rostype_and_value):
-    # TODO : makeit clearer that we get different data here, even if we still use msg_rostype_and_value
-    # Same values as for ros message test
-    msg_type = msg_rostype_and_value[0]
-    pyfield = msg_rostype_and_value[1]
+from .strategies.python import optfield_strat_ok
+
+
+@hypothesis.given(optfield_strat_ok.get('optbool'))
+def test_bool_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optbool', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optint8'))
+def test_int8_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optint8', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optint16'))
+def test_int16_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optint16', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optint32'))
+def test_int32_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optint32', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optint64'))
+def test_int64_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optint64', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optuint8'))
+def test_uint8_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optuint8', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optuint16'))
+def test_uint16_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optuint16', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optuint32'))
+def test_uint32_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optuint32', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optuint64'))
+def test_uint64_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optuint64', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optfloat32'))
+def test_float32_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optfloat32', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optfloat64'))
+def test_float64_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optfloat64', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optstring'))
+def test_string_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optstring', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('opttime'))
+def test_time_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('opttime', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optduration'))
+def test_duration_optfield_serialize_deserialize_from_py_inverse(msg_value):
+    return optfield_serialize_deserialize_from_py_inverse('optduration', msg_value)
+
+
+def optfield_serialize_from_py_to_listtype(msg_type, pyfield):
 
     # get actual type from type string
     # rosmsg_type = genpy.message.get_message_class(msg_type)
@@ -301,6 +423,69 @@ def test_field_serialize_from_py_to_listtype(msg_rostype_and_value):
                         assert serialized[idx][0] == elem
                 else:  # dict format can be used for nested types though...
                     assert serialized[0] == rosfield_pytype(**pyfield)
+
+
+@hypothesis.given(optfield_strat_ok.get('optbool'))
+def test_bool_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optbool', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optint8'))
+def test_int8_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optint8', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optint16'))
+def test_int16_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optint16', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optint32'))
+def test_int32_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optint32', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optint64'))
+def test_int64_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optint64', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optuint8'))
+def test_uint8_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optuint8', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optuint16'))
+def test_uint16_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optuint16', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optuint32'))
+def test_uint32_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optuint32', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optuint64'))
+def test_uint64_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optuint64', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optfloat32'))
+def test_float32_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optfloat32', msg_value)
+
+@hypothesis.given(optfield_strat_ok.get('optfloat64'))
+def test_float64_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optfloat64', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optstring'))
+def test_string_ooptfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optstring', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('opttime'))
+def test_time_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('opttime', msg_value)
+
+
+@hypothesis.given(optfield_strat_ok.get('optduration'))
+def test_duration_optfield_serialize_from_py_to_listtype(msg_value):
+    return optfield_serialize_from_py_to_listtype('optduration', msg_value)
 
 
 # Just in case we run this directly

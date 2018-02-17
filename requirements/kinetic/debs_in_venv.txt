@@ -11,8 +11,6 @@ numpy==1.11.0
 -e git+https://github.com/asmodehn/ros.git@setuptools#egg=ros_roslib&subdirectory=core/roslib
 -e git+https://github.com/asmodehn/catkin.git@setuptools#egg=ros_catkin
 
--e git+https://github.com/pyros-dev/pyros-msgs.git@nested_implement#egg=pyros_msgs
-
 # These dependencies are python pkgs only and only for tests.
 filefinder2
 rosimport
