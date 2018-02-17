@@ -7,5 +7,5 @@
 -e git+https://github.com/asmodehn/ros.git@setuptools#egg=ros_roslib&subdirectory=core/roslib
 -e git+https://github.com/asmodehn/catkin.git@setuptools#egg=ros_catkin
 
--e git+https://github.com/pyros-dev/pyros-msgs.git@nested_implement#egg=pyros_msgs
+-e git+https://github.com/pyros-dev/pyros-msgs.git#egg=pyros_msgs
 
