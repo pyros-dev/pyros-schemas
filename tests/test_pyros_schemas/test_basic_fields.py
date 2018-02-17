@@ -16,6 +16,9 @@ from . import six_long, maybe_list
 from .strategies.python import field_strat_ok
 from .strategies.ros import std_msgs_types_strat_ok, rostype_from_rostypestring, fieldtypestring_from_rostypestring
 
+# Some tests are still failing on python3, related to strings. see https://github.com/ros/genpy/pull/85 and https://github.com/ros/genpy/pull/90 for related discussion
+# also https://discourse.ros.org/t/python3-and-strings/2392
+
 
 # absolute import ros field types
 from pyros_schemas.ros import (

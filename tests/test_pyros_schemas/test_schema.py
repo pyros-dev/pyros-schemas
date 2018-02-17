@@ -17,6 +17,10 @@ from . import msg as pyros_schemas_test_msgs
 
 from .strategies.ros import std_msgs_types_strat_ok, std_msgs_dicts_strat_ok
 
+# Some tests are still failing on python3, related to strings. see https://github.com/ros/genpy/pull/85 and https://github.com/ros/genpy/pull/90 for related discussion
+# also https://discourse.ros.org/t/python3-and-strings/2392
+
+
 std_msgs_types = {
     'std_msgs/Bool': std_msgs.Bool,
     'std_msgs/Int8': std_msgs.Int8,

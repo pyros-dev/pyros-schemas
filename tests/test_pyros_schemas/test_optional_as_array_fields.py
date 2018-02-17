@@ -5,7 +5,7 @@ import pytest
 import std_msgs.msg as std_msgs
 import genpy
 
-
+import sys
 import six
 import marshmallow
 import hypothesis
@@ -28,10 +28,8 @@ from pyros_schemas.ros.optional_fields import (
 )
 
 
-from pyros_schemas.ros.types_mapping import (
-    ros_msgtype_mapping,
-    ros_pythontype_mapping
-)
+# Some tests are still failing on python3, related to strings. see https://github.com/ros/genpy/pull/85 and https://github.com/ros/genpy/pull/90 for related discussion
+# also https://discourse.ros.org/t/python3-and-strings/2392
 
 from . import six_long, maybe_list
 
@@ -56,9 +54,15 @@ pyros_schemas_opttypes_data_schemas_rosopttype_pytype = {
     'optfloat64': (lambda: RosOptAsList(RosFloat64()), float, float),
 #    'optstring': [(lambda: RosOptAsList(RosString()), six.binary_type, six.binary_type)], # , (RosTextString, six.binary_type, six.text_type)],
     'optstring': [(lambda: RosOptAsList(RosTextString()), six.binary_type, six.text_type)],  # Note the ambiguity of str for py2/py3
+
     'opttime': [(lambda: RosOptAsList(RosTime()), genpy.Time, six_long)],
     'optduration': [(lambda: RosOptAsList(RosDuration()), genpy.Duration, six_long)],
 }
+
+
+# if sys.version_info < (3,0):
+#     pyros_schemas_opttypes_data_schemas_rosopttype_pytype['optstring']= [(lambda: RosOptAsList(RosTextString()), six.binary_type, six.binary_type)]
+
 
 pyros_schemas_opttypes_data_ros_field_types = {
     'pyros_schemas/test_opt_bool_as_array': (pyros_schemas_test_msgs.test_opt_bool_as_array, 'optbool'),
