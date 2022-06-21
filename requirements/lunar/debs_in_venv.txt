@@ -2,7 +2,7 @@
 pytest==2.8.7
 pytest-xdist==1.8  # for --boxed
 hypothesis==3.0.1
-numpy==1.11.0
+numpy==1.22.0
 
 # TODO : lock this on lunar
 # ros dependencies (necessary when running tests from install)
