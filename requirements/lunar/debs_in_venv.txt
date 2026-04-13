@@ -1,5 +1,5 @@
 # xenial packages versions to validate behavior with these versions for a potential ROS package for pyros-msgs
-pytest==2.8.7
+pytest==9.0.3
 pytest-xdist==1.8  # for --boxed
 hypothesis==3.0.1
 numpy==1.11.0
